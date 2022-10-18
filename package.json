@@ -11,6 +11,8 @@
     "@remix-run/node": "^1.7.2",
     "@remix-run/react": "^1.7.2",
     "@remix-run/serve": "^1.7.2",
+    "ag-grid-community": "^28.2.0",
+    "ag-grid-react": "^28.2.0",
     "isbot": "^3.5.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
