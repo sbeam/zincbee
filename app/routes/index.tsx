@@ -18,72 +18,13 @@ export function links() {
   ];
 }
 
-export async function loader({ start, end }: any) {
+async function loader({ start, end }: any) {
   const response = await fetch(`http://localhost:3001/orders?start=${start}&end=${end}`)
   const data = await response.json()
   return data
 }
 
-function PositionRow({ position }: any) {
-  return(
-    <tr className={position.status}>
-      <td>
-        { position.sym }
-      </td>
-      <td>
-        <FormattedDate isoDate={position.created_at} />
-      </td>
-      <td>
-        { position.qty }
-      </td>
-      <td>
-        { position.filled_avg_price }
-      </td>
-      <td>
-        { position.cost_basis }
-      </td>
-    </tr>
-  )
-}
-
-function PositionTable({ positions }) {
-  return(
-    <>
-    <table>
-      <tr>
-        <th>Symbol</th>
-        <th>Entered</th>
-        <th>Qty</th>
-        <th>Price</th>
-        <th>Cost Basis</th>
-      </tr>
-      { positions.map( (position: {}, i: any) =>
-        <PositionRow key={i} position={position} />
-      )}
-    </table>
-    </>
-  )
-}
-
-const dateFormatter = (params: any) => {
-  if (params.value) {
-    const date = Date.parse(params.value)
-    const locale = "en-US"; // TODO: use locale setting https://donavon.com/blog/remix-locale
-    const timeZone = "America/New_York"
-
-    return new Intl.DateTimeFormat(locale, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      timeZone,
-    }).format(date);
-  }
-  return null;
-}
-
 export default function Index() {
-  // const positions = useLoaderData<typeof loader>();
-  const [state, setState] = useState(false)
   const [positions, setPositions] = useState([]);
 
   const rowClass = (data: any) => {
