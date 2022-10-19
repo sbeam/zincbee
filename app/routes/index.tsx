@@ -1,9 +1,22 @@
 import { Form, Outlet, useLoaderData } from '@remix-run/react'
 import { useCallback, useEffect, useState } from "react";
 import { FormattedDate } from '~/components/date'
-import { AgGridReact } from "ag-grid-react";
-import AgGridStyles from "ag-grid-community/dist/styles/ag-grid.css";
-import AgThemeAlpineStyles from "ag-grid-community/dist/styles/ag-theme-alpine.css";
+import { classNames } from 'primereact/utils';
+import { DataTable } from 'primereact/datatable';
+import { Column } from 'primereact/column';
+
+import theme from "primereact/resources/themes/lara-dark-indigo/theme.css";  //theme
+import pr from "primereact/resources/primereact.min.css";                  //core css
+import icons from "primeicons/primeicons.css";                                //icons
+
+
+export function links() {
+  return [
+    { rel: "stylesheet", href: pr },
+    { rel: "stylesheet", href: theme },
+    { rel: "stylesheet", href: icons },
+  ];
+}
 
 export async function loader({ start, end }: any) {
   const response = await fetch(`http://localhost:3001/orders?start=${start}&end=${end}`)
@@ -69,77 +82,37 @@ const dateFormatter = (params: any) => {
 }
 
 export default function Index() {
-  const [isFetching, setIsFetching] = useState(false);
-  const [getRowParams, setGetRowParams] = useState(null);
-  const [rowData, setRowData] = useState([])
+  // const positions = useLoaderData<typeof loader>();
+  const [state, setState] = useState(false)
+  const [positions, setPositions] = useState([]);
 
-  const positions = useLoaderData<typeof loader>();
-
-  const onGridReady = (params: any) => {
-    const api = params.api;
-    const datasource = {
-      getRows(params: any) {
-        if (!isFetching) {
-          setIsFetching(true);
-          loader({ start: params.startRow, end: params.endRow }).then((data: any) => {
-            console.log(data)
-            api.setRowData(data)
-            setIsFetching(false);
-          })
-
-          setGetRowParams(params);
-        }
-      },
-    };
-
-    api.setDatasource(datasource);
+  const rowClass = (data: any) => {
+    return {
+      'row-accessories': data.category === 'Accessories'
+    }
   }
 
-
-  //  useEffect(() => {
-  //    if (getRowParams) {
-  //      const data = positions.data || [];
-  //      console.log(data )
-
-  //      getRowParams.successCallback(
-  //        data,
-  //        data.length < getRowParams.endRow - getRowParams.startRow ? getRowParams.startRow : -1
-  //      )
-  //    }
-
-  //    setIsFetching(false);
-  //    setGetRowParams(null);
-  //  }, [rowData])
-
-
-  const columnDefs = [
-    { field: "symbol" },
-    { field: "entered", valueFormatter: dateFormatter, },
-    { field: "qty", flex: 1, minWidth: 100 },
-    { field: "price", minWidth: 250 },
-    { field: "cost.basis" },
-  ]
+  useEffect(() => {
+    loader({}).then((data) => {
+      setPositions(data)
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}>
       <h1>Positions</h1>
       <div className="ag-theme-alpine" style={{ width: "100%", height: "100%" }}>
-        <AgGridReact
-          columnDefs={columnDefs}
-          rowModelType="infinite"
-          onGridReady={onGridReady}
-        />
+        <DataTable value={positions} rowClassName={rowClass} responsiveLayout="scroll">
+          <Column field="sym" header="Symbol"></Column>
+          <Column field="created_at" header="Entered" body={(row) => <FormattedDate isoString={row.created_at} />}></Column>
+          <Column field="qty" header="Quantity"></Column>
+          <Column field="filled_avg_price" header="Price"></Column>
+          <Column field="cost_basis" header="Cost Basis"></Column>
+        </DataTable>
       </div>
     </div>
     <Outlet />
     </>
   );
-}
-
-export function links() {
-  return [
-    { rel: "stylesheet", href: AgGridStyles },
-    { rel: "stylesheet", href: AgThemeAlpineStyles },
-  ];
 }

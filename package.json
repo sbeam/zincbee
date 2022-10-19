@@ -2,18 +2,20 @@
   "private": true,
   "sideEffects": false,
   "scripts": {
-    "build": "remix build",
     "deploy": "fly deploy --remote-only",
     "dev": "remix dev",
-    "start": "remix-serve build"
+    "start": "remix-serve build",
+    "build": "remix build && npm run install:fonts",
+    "postinstall": "remix setup node && npm run install:fonts",
+    "install:fonts": "rsync -r node_modules/primeicons/fonts/ public/build/_assets/fonts/"
   },
   "dependencies": {
     "@remix-run/node": "^1.7.2",
     "@remix-run/react": "^1.7.2",
     "@remix-run/serve": "^1.7.2",
-    "ag-grid-community": "^28.2.0",
-    "ag-grid-react": "^28.2.0",
     "isbot": "^3.5.4",
+    "primeicons": "^6.0.1",
+    "primereact": "^8.6.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
