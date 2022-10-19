@@ -26,6 +26,7 @@ async function loader({ start, end }: any) {
 
 export default function Index() {
   const [positions, setPositions] = useState([]);
+  const [selectedRow, setSelectedRow] = useState(null);
 
   const rowClass = (data: any) => {
     return {
@@ -43,15 +44,24 @@ export default function Index() {
     <>
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}>
       <h1>Positions</h1>
-      <div className="ag-theme-alpine" style={{ width: "100%", height: "100%" }}>
-        <DataTable value={positions} rowClassName={rowClass} responsiveLayout="scroll">
-          <Column field="sym" header="Symbol"></Column>
-          <Column field="created_at" header="Entered" body={(row) => <FormattedDate isoString={row.created_at} />}></Column>
-          <Column field="qty" header="Quantity"></Column>
-          <Column field="filled_avg_price" header="Price"></Column>
-          <Column field="cost_basis" header="Cost Basis"></Column>
-        </DataTable>
-      </div>
+      <DataTable
+        value={positions}
+        size="small"
+        metaKeySelection={false}
+        showGridlines
+        rowClassName={rowClass}
+        responsiveLayout="scroll"
+        selection={selectedRow}
+        onSelectionChange={e => setSelectedRow(e.value)}
+        selectionMode="single"
+        dataKey="id"
+        >
+        <Column field="sym" header="Symbol"></Column>
+        <Column field="created_at" header="Entered" body={(row) => <FormattedDate isoString={row.created_at} />}></Column>
+        <Column field="qty" header="Quantity"></Column>
+        <Column field="filled_avg_price" header="Price"></Column>
+        <Column field="cost_basis" header="Cost Basis"></Column>
+      </DataTable>
     </div>
     <Outlet />
     </>

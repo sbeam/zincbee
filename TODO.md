@@ -28,9 +28,10 @@ If closed
 [ ] exec button if pending
 [ ] liquidate if open
 [ ] edit stop/target if open
+[ ] sparklines with performance side panel
 [ ] page results
-[ ] filter by date, symbol, etc
-
+[ ] filter by symbol
+[ ] remove hack in package.json when fix for font copy lands https://github.com/remix-run/remix/issues/1153
 
 # Random Notes
 
@@ -47,3 +48,7 @@ https://www.ory.sh/cloud/
 
 Fauna - distrubuted Graph DB
 https://fauna.com/
+
+Primefaces UI lib https://www.primefaces.org/primereact/
+
+
