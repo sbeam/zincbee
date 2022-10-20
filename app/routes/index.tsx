@@ -4,11 +4,11 @@ import { FormattedDate } from '~/components/date'
 import { classNames } from 'primereact/utils';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
+import { useQueryClient, useQuery } from 'react-query'
 
 import theme from "primereact/resources/themes/lara-dark-indigo/theme.css";  //theme
 import pr from "primereact/resources/primereact.min.css";                  //core css
 import icons from "primeicons/primeicons.css";                                //icons
-
 
 export function links() {
   return [
@@ -22,6 +22,28 @@ async function loader({ start, end }: any) {
   const response = await fetch(`http://localhost:3001/orders?start=${start}&end=${end}`)
   const data = await response.json()
   return data
+}
+
+interface CurrentQuoteProps {
+  symbol: string
+}
+
+const CurrentQuote = ({ symbol }: CurrentQuoteProps) => {
+  // TODO this is really getting the latest quote, not the latest trade via apca. Need
+  // to extend apca to get the latest trade
+  const { isLoading, isError, data, error } = useQuery(['latest', symbol], async () => {
+    console.log('fetching latest quote for ', symbol)
+    return await fetch(`http://localhost:3001/latest?sym=${symbol}`).then(res => res.json())
+  })
+  if (isLoading) return <p>...</p>
+  if (isError && error instanceof Error) return <p>{error.message}</p>
+  console.log(symbol, data)
+
+  return (
+    <div className="latest-trade">
+      {data.ask_price} / {data.bid_price}
+    </div>
+  )
 }
 
 export default function Index() {
@@ -61,6 +83,7 @@ export default function Index() {
         <Column field="qty" header="Quantity"></Column>
         <Column field="filled_avg_price" header="Price"></Column>
         <Column field="cost_basis" header="Cost Basis"></Column>
+        <Column header="Current" body={(row) => <CurrentQuote symbol={row.sym} />}></Column>
       </DataTable>
     </div>
     <Outlet />

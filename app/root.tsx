@@ -6,9 +6,12 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-} from "@remix-run/react";
-
+} from "@remix-run/react"
+import { QueryClient, QueryClientProvider } from "react-query"
 import globalStyleURL from "~/styles/global.css";
+
+const queryClient = new QueryClient()
+
 export const links = () => {
   return [{ rel: 'stylesheet', href: globalStyleURL }]
 }
@@ -21,18 +24,19 @@ export const meta: MetaFunction = () => ({
 
 export default function App() {
   return (
-    <html lang="en">
-      <head>
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        <h1>Orders</h1>
-        <Outlet />
-        <ScrollRestoration />
-        <Scripts />
-        <LiveReload />
-      </body>
-    </html>
+    <QueryClientProvider client={queryClient}>
+      <html lang="en">
+        <head>
+          <Meta />
+          <Links />
+        </head>
+        <body>
+          <Outlet />
+          <ScrollRestoration />
+          <Scripts />
+          <LiveReload />
+        </body>
+      </html>
+    </QueryClientProvider>
   );
 }

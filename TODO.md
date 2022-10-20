@@ -24,6 +24,7 @@ If closed
    - % g/li
    - slip %
 
+[ ] get current quote, fill g/l etc **
 [ ] top row blank fields for sym, qty, limit, stop, target
 [ ] exec button if pending
 [ ] liquidate if open
@@ -32,6 +33,8 @@ If closed
 [ ] page results
 [ ] filter by symbol
 [ ] remove hack in package.json when fix for font copy lands https://github.com/remix-run/remix/issues/1153
+
+** https://github.com/prediqtiv/alpha-vantage-cookbook/blob/master/sp500-get-av-intraday/sp500-get-av-intraday.html#L95
 
 # Random Notes
 
