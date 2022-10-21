@@ -20,12 +20,6 @@ export function links() {
   ]
 }
 
-async function loader({ start, end }: any) {
-  const response = await fetch(`http://localhost:3001/orders?start=${start}&end=${end}`)
-  const data = await response.json()
-  return data
-}
-
 interface CurrentQuoteProps {
   symbol: string,
   costBasis?: number,
@@ -70,7 +64,8 @@ const GainLoss = ({ qty, costBasis, symbol }: CurrentQuoteProps) => {
     const unsubscribe = observer.subscribe(( { data }) => {
       console.log('result', data)
       if (costBasis && qty && data instanceof Object) {
-        setGL(costBasis - (data.bid_price * qty))
+        setGL((data.bid_price * qty) - costBasis)
+        console.log(symbol, data.bid_price, qty, costBasis)
         setLoading(false)
       }
     })
@@ -94,8 +89,7 @@ const currencyFormat = (value: number | bigint | undefined) => {
   }
 }
 
-export default function Index() {
-  const [positions, setPositions] = useState([])
+const PositionsTable = () => {
   const [selectedRow, setSelectedRow] = useState(null)
 
   const rowClass = (data: any) => {
@@ -104,37 +98,50 @@ export default function Index() {
     }
   }
 
-  useEffect(() => {
-    loader({}).then((data) => {
-      setPositions(data)
-    })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const { isLoading, isError, data, error } = useQuery('positions', async () => {
+    const response = await fetch(`http://localhost:3001/orders?start`)
+    if (!response.ok) {
+      console.log('Network error', response.status)
+      throw new Error('Network error')
+    }
+    return response.json()
+  }, {
+    refetchOnWindowFocus: false
+  })
+  if (isLoading) return <p>...</p>
+  if (isError && error instanceof Error) return <p>{error.message}</p>
 
+  return (
+    <DataTable
+      value={data}
+      size="small"
+      metaKeySelection={false}
+      showGridlines
+      rowClassName={rowClass}
+      responsiveLayout="scroll"
+      selection={selectedRow}
+      onSelectionChange={e => setSelectedRow(e.value)}
+      selectionMode="single"
+      dataKey="id"
+      >
+      <Column field="sym" header="Symbol"></Column>
+      <Column field="created_at" header="Entered" body={(row) => <FormattedDate isoString={row.created_at} />}></Column>
+      <Column field="qty" header="Quantity"></Column>
+      <Column field="filled_avg_price" header="Price" body={(row) => currencyFormat(row.filled_avg_price)} />
+      <Column field="cost_basis" header="Cost Basis" body={(row) => currencyFormat(row.cost_basis)} />
+      <Column field="current" header="Current" body={(row) => <CurrentQuote symbol={row.sym} />}></Column>
+      <Column field="gainloss" header="G/L" body={(row) => <GainLoss qty={row.qty} symbol={row.sym} costBasis={row.cost_basis} />}></Column>
+    </DataTable>
+  )
+}
+
+export default function Index() {
   return (
     <>
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}>
-      <h1>Positions</h1>
       <QueryClientProvider client={queryClient}>
-        <DataTable
-          value={positions}
-          size="small"
-          metaKeySelection={false}
-          showGridlines
-          rowClassName={rowClass}
-          responsiveLayout="scroll"
-          selection={selectedRow}
-          onSelectionChange={e => setSelectedRow(e.value)}
-          selectionMode="single"
-          dataKey="id"
-          >
-          <Column field="sym" header="Symbol"></Column>
-          <Column field="created_at" header="Entered" body={(row) => <FormattedDate isoString={row.created_at} />}></Column>
-          <Column field="qty" header="Quantity"></Column>
-          <Column field="filled_avg_price" header="Price" body={(row) => currencyFormat(row.filled_avg_price)} />
-          <Column field="cost_basis" header="Cost Basis" body={(row) => currencyFormat(row.cost_basis)} />
-          <Column field="current" header="Current" body={(row) => <CurrentQuote symbol={row.sym} />}></Column>
-          <Column field="gainloss" header="G/L" body={(row) => <GainLoss qty={row.qty} symbol={row.sym} costBasis={row.filled_avg_price} />}></Column>
-        </DataTable>
+        <h1>Positions</h1>
+        <PositionsTable />
       </QueryClientProvider>
     </div>
     <Outlet />
