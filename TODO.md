@@ -38,6 +38,8 @@ If closed
 
 # Random Notes
 
+[Vite](https://vitejs.dev/) is a new build tool that's supposed to be faster than webpack. Probably worth trying out vs Remix
+
 Integrate alpaca-js? or keep F/E vendor neutral?
 
 Apparently you can use wasm-pack to run Rust inside of Node on the server??
@@ -49,7 +51,7 @@ https://supabase.com/docs/guides/hosting/overview
 Ory - auth and authz RBAC
 https://www.ory.sh/cloud/
 
-Fauna - distrubuted Graph DB
+Fauna - distrubuted Graph DB (not useful here but for some future project)
 https://fauna.com/
 
 Primefaces UI lib https://www.primefaces.org/primereact/

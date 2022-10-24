@@ -20,13 +20,13 @@ export function links() {
   ]
 }
 
-interface CurrentQuoteProps {
+interface LastTradeProps {
   symbol: string,
   costBasis?: number,
   qty?: number,
 }
 
-const CurrentQuote = ({ symbol }: CurrentQuoteProps) => {
+const LastTrade = ({ symbol }: LastTradeProps) => {
   // TODO this is really getting the latest quote, not the latest trade via apca. Need
   // to extend apca to get the latest trade
   const { isLoading, isError, data, error } = useQuery(
@@ -50,12 +50,12 @@ const CurrentQuote = ({ symbol }: CurrentQuoteProps) => {
 
   return (
     <div className="latest-trade">
-      {currencyFormat(data.ask_price)} / {currencyFormat(data.bid_price)}
+      {currencyFormat(data[0].price)}
     </div>
   )
 }
 
-const GainLoss = ({ qty, costBasis, symbol }: CurrentQuoteProps) => {
+const GainLoss = ({ qty, costBasis, symbol }: LastTradeProps) => {
   const [gL, setGL] = useState(0)
   const [loading, setLoading] = useState(true)
 
@@ -64,8 +64,8 @@ const GainLoss = ({ qty, costBasis, symbol }: CurrentQuoteProps) => {
     const unsubscribe = observer.subscribe(( { data }) => {
       console.log('result', data)
       if (costBasis && qty && data instanceof Object) {
-        setGL((data.bid_price * qty) - costBasis)
-        console.log(symbol, data.bid_price, qty, costBasis)
+        setGL((data[0].price * qty) - costBasis)
+        console.log(symbol, data, qty, costBasis)
         setLoading(false)
       }
     })
@@ -129,7 +129,7 @@ const PositionsTable = () => {
       <Column field="qty" header="Quantity"></Column>
       <Column field="filled_avg_price" header="Price" body={(row) => currencyFormat(row.filled_avg_price)} />
       <Column field="cost_basis" header="Cost Basis" body={(row) => currencyFormat(row.cost_basis)} />
-      <Column field="current" header="Current" body={(row) => <CurrentQuote symbol={row.sym} />}></Column>
+      <Column field="last_trade" header="Last" body={(row) => <LastTrade symbol={row.sym} />}></Column>
       <Column field="gainloss" header="G/L" body={(row) => <GainLoss qty={row.qty} symbol={row.sym} costBasis={row.cost_basis} />}></Column>
     </DataTable>
   )
