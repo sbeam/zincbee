@@ -8,3 +8,10 @@ body {
   height: calc(100% - 2rem);
   width: calc(100% - 2rem);
 }
+
+.gain {
+  color: green;
+}
+.loss {
+  color: red;
+}

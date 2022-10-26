@@ -57,15 +57,18 @@ const LastTrade = ({ symbol }: LastTradeProps) => {
 
 const GainLoss = ({ qty, costBasis, symbol }: LastTradeProps) => {
   const [gL, setGL] = useState(0)
+  const [pct, setPct] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const observer = new QueryObserver(queryClient, { queryKey: ['latest', symbol] })
     const unsubscribe = observer.subscribe(( { data }) => {
       console.log('result', data)
-      if (costBasis && qty && data instanceof Object) {
-        setGL((data[0].price * qty) - costBasis)
-        console.log(symbol, data, qty, costBasis)
+      if (costBasis && qty && data instanceof Array) {
+        const gain = (data[0].price * qty) - costBasis
+        setGL(gain)
+        setPct((gain / costBasis) * 100)
+        console.log(symbol, qty, gain, costBasis)
         setLoading(false)
       }
     })
@@ -73,8 +76,9 @@ const GainLoss = ({ qty, costBasis, symbol }: LastTradeProps) => {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="gain-loss">
+    <div className={classNames("gain-loss", { gain: gL > 0, loss: gL < 0})}>
       {loading ? '...' : currencyFormat(gL)}
+      {loading ? '': ` (${pct.toFixed(2)}%)`}
     </div>
   )
 }
