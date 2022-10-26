@@ -1,6 +1,5 @@
 import { Form, Outlet, useLoaderData } from '@remix-run/react'
 import { useCallback, useEffect, useState } from "react"
-import { FormattedDate } from '~/components/date'
 import { classNames } from 'primereact/utils'
 import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
@@ -8,13 +7,18 @@ import { useQuery, QueryClient, QueryClientProvider, QueryObserver } from 'react
 
 import theme from "primereact/resources/themes/lara-dark-indigo/theme.css"  //theme
 import pr from "primereact/resources/primereact.min.css"                  //core css
+import pf from 'primeflex/primeflex.css';
 import icons from "primeicons/primeicons.css"                                //icons
+
+import OrderForm from '~/components/order-form'
+import { FormattedDate } from '~/components/date'
 
 const queryClient = new QueryClient()
 
 export function links() {
   return [
     { rel: "stylesheet", href: pr },
+    { rel: "stylesheet", href: pf },
     { rel: "stylesheet", href: theme },
     { rel: "stylesheet", href: icons },
   ]
@@ -146,7 +150,7 @@ export default function Index() {
     <>
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}>
       <QueryClientProvider client={queryClient}>
-        <h1>Positions</h1>
+        <OrderForm />
         <PositionsTable />
       </QueryClientProvider>
     </div>
