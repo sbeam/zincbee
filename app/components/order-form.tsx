@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react"
+import { useState } from "react"
+import { useMutation } from "react-query"
 import 'primeflex/primeflex.css';
 import 'primeicons/primeicons.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
@@ -7,6 +8,9 @@ import { InputText } from 'primereact/inputtext'
 import { InputNumber } from 'primereact/inputnumber'
 import { Button } from 'primereact/button'
 import { InputSwitch } from 'primereact/inputswitch'
+
+const createOrder = async (order) => {
+}
 
 export default function OrderForm() {
   const [symbol, setSymbol] = useState('')
@@ -19,10 +23,30 @@ export default function OrderForm() {
   const [hardStop, setHardStop] = useState(true)
   const [hardTarget, setHardTarget] = useState(true)
 
+  const createOrder = useMutation(({}) => {
+    console.log(newOrder)
+    debugger
+    return fetch('/api/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newOrder)
+    })
+  }, {
+    onSuccess: () => { console.log('success') },
+    onError: () => { console.log('error') },
+    retry: false,
+  })
+
   return (
+    <form onSubmit={e => {
+      e.preventDefault()
+      createOrder.mutate(new FormData(e.currentTarget))
+    }}>
       <div className="p-fluid grid formgrid">
         <div className="col-12 md:col-4">
-          Place Order
+          Place new order
         </div>
         <div className="col-12 pb-1 md:col-2">
           <div className="flex align-items-center">
@@ -85,5 +109,6 @@ export default function OrderForm() {
           <Button label="Submit" className="p-button-outlined" />
         </div>
       </div>
+    </form>
   )
 }
