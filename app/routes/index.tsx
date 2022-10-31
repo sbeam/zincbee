@@ -12,6 +12,7 @@ import icons from "primeicons/primeicons.css"                                //i
 
 import OrderForm from '~/components/order-form'
 import { FormattedDate } from '~/components/date'
+import currencyFormat from '~/utils/currency-format'
 
 const queryClient = new QueryClient()
 
@@ -87,16 +88,6 @@ const GainLoss = ({ qty, costBasis, symbol }: LastTradeProps) => {
   )
 }
 
-const currencyFormat = (value: number | bigint | undefined) => {
-  if (value) {
-    const formatter = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    })
-    return formatter.format(value)
-  }
-}
-
 const PositionsTable = () => {
   const [selectedRow, setSelectedRow] = useState(null)
 
@@ -137,9 +128,9 @@ const PositionsTable = () => {
       <Column field="qty" header="Quantity"></Column>
       <Column field="filled_avg_price" header="Price" body={(row) => currencyFormat(row.filled_avg_price)} />
       <Column field="cost_basis" header="Cost Basis" body={(row) => currencyFormat(row.cost_basis)} />
-      <Column field="stop" header="Stop" />
+      <Column field="stop" header="Stop" body={(row) => currencyFormat(row.stop)} />
       <Column field="last_trade" header="Last" body={(row) => <LastTrade symbol={row.sym} />}></Column>
-      <Column field="target" header="Target" />
+      <Column field="target" header="Target" body={(row) => currencyFormat(row.target)} />
       <Column field="gainloss" header="G/L" body={(row) => <GainLoss qty={row.qty} symbol={row.sym} costBasis={row.cost_basis} />}></Column>
     </DataTable>
   )

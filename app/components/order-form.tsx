@@ -11,12 +11,10 @@ import { Button } from 'primereact/button'
 import { InputSwitch } from 'primereact/inputswitch'
 import { classNames } from 'primereact/utils'
 
+import QuickQuote from "./quick-quote"
+
 export default function OrderForm() {
-  const [sym, setSymbol] = useState('')
-  const [qty, setQty] = useState<number | null>()
-  const [limit, setLimit] = useState<number | null>()
-  const [stop, setStop] = useState<number | null>()
-  const [target, setTarget] = useState<number | null>()
+  const [symbol, setSymbol] = useState('')
 
   const [market, setMarket] = useState(false)
   const [hardStop, setHardStop] = useState(true)
@@ -33,7 +31,12 @@ export default function OrderForm() {
     target: 0
   }
 
-  const { control, formState: { errors }, handleSubmit, reset } = useForm({ defaultValues })
+  const {
+    control,
+    formState: { errors },
+    handleSubmit,
+    reset
+  } = useForm({ defaultValues })
 
   const onSubmit = async (data: any) => {
     try {
@@ -102,7 +105,12 @@ export default function OrderForm() {
         <div className="field col-12 md:col-2">
           <span className="p-float-label">
             <Controller name="sym" control={control} rules={{ required: 'Symbol is required'}} render={({ field, fieldState }) => (
-              <InputText id={field.name} {...field} className={classNames({ 'p-invalid': fieldState.invalid })} />
+              <InputText
+                id={field.name}
+                {...field}
+                className={classNames({ 'p-invalid': fieldState.invalid })}
+                onBlur={(e) => setSymbol(e.target.value)}
+              />
             )} />
            <label htmlFor="inputsymbol">Symbol</label>
           </span>
@@ -176,6 +184,11 @@ export default function OrderForm() {
         <div className="field col-12 md:col-2">
           <Button label="Submit" className="p-button" />
         </div>
+        { symbol &&
+          <div className="field col-12 md:col-10">
+            <QuickQuote symbol={symbol} />
+          </div>
+        }
       </div>
     </form>
     </>

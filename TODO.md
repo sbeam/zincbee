@@ -2,7 +2,7 @@
 # TODO
 
 [ ] 2 fields for Alpaca API keys
-[ ] List orders from API
+[x] List orders from API
 [ ] List open and closed positions
    - symbol
    - qty
@@ -17,15 +17,19 @@
 
 * soft or hard
 
-If closed
+[ ] If closed
    - sold at
    - filled avg price
    - proceeds
    - % g/li
    - slip %
 
-[ ] get current quote, fill g/l etc **
-[ ] top row blank fields for sym, qty, limit, stop, target
+[x] get last price, fill, g/l etc **
+[x] top row blank fields for sym, qty, limit, stop, target
+[x] bracket order placement
+[ ] popup to confirm order
+[ ] cancel pending
+[ ] show asset quote on symbol enter
 [ ] exec button if pending
 [ ] liquidate if open
 [ ] edit stop/target if open
@@ -33,6 +37,7 @@ If closed
 [ ] page results
 [ ] filter by symbol
 [ ] remove hack in package.json when fix for font copy lands https://github.com/remix-run/remix/issues/1153
+[ ] OAuth support
 
 ** https://github.com/prediqtiv/alpha-vantage-cookbook/blob/master/sp500-get-av-intraday/sp500-get-av-intraday.html#L95
 
