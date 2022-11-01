@@ -10,11 +10,15 @@ import pr from "primereact/resources/primereact.min.css"                  //core
 import pf from 'primeflex/primeflex.css';
 import icons from "primeicons/primeicons.css"                                //icons
 
+import chroma from 'chroma-js'
+
 import OrderForm from '~/components/order-form'
 import { FormattedDate } from '~/components/date'
 import currencyFormat from '~/utils/currency-format'
 
 const queryClient = new QueryClient()
+
+const stopScale = chroma.scale(['#ffcc00', '#ffffff']).domain([0, 20])
 
 export function links() {
   return [
@@ -89,10 +93,11 @@ const GainLoss = ({ qty, costBasis, symbol }: LastTradeProps) => {
 }
 
 const StopCell = ({ stop, filled_avg_price } : { stop: number, filled_avg_price: number }) => {
-  if (stop && stop > 0) {
+  if (stop > 0) {
     if (filled_avg_price > 0) {
-      let elev = 1 - (stop / filled_avg_price)
-      return <div>{currencyFormat(stop)} ({elev.toFixed(2)}%)</div>
+
+      let elev = (1 - (stop / filled_avg_price)) * 100
+      return <div style={{color: stopScale(elev).css()}}>{currencyFormat(stop)} ({elev.toFixed(2)}%)</div>
     }
     else {
       return <div>{currencyFormat(stop)}</div>
