@@ -72,12 +72,11 @@ const GainLoss = ({ qty, costBasis, symbol }: LastTradeProps) => {
   useEffect(() => {
     const observer = new QueryObserver(queryClient, { queryKey: ['latest', symbol] })
     const unsubscribe = observer.subscribe(( { data }) => {
-      console.log('result', data)
       if (costBasis && qty && data instanceof Array) {
         const gain = (data[0].price * qty) - costBasis
         setGL(gain)
         setPct((gain / costBasis) * 100)
-        console.log(symbol, qty, gain, costBasis)
+        // console.log(symbol, qty, gain, costBasis)
         setLoading(false)
       }
     })
@@ -102,6 +101,20 @@ const StopCell = ({ stop, filled_avg_price } : { stop: number, filled_avg_price:
     else {
       return <div>{currencyFormat(stop)}</div>
     }
+  }
+}
+
+// Show max loss absolute amount with scary red color if near 1000 (prob useless)
+const MaxLossCell = ({ stop, qty, cost_basis } : { stop: number, qty: number, cost_basis: number }) => {
+  if (stop > 0 && qty > 0) {
+      let max = (stop * qty) - cost_basis
+      let scale = 1000 // TODO make this a setting
+
+      // brought to you by the fact that React will not insert backgoundColor into the style attribute
+      // when it is in rgba[] format, but only when in full #rrggbbaa format
+      let alpha = Math.round((255 * Math.min(1, Math.abs(max / scale)))).toString(16).padStart(2, '0')
+      let rgba = `#993344${alpha}`
+      return <div style={{color: '#fff', backgroundColor: rgba}}>{currencyFormat(max)}</div>
   }
 }
 
@@ -146,6 +159,7 @@ const PositionsTable = () => {
       <Column field="filled_avg_price" header="Price" body={(row) => currencyFormat(row.filled_avg_price)} />
       <Column field="cost_basis" header="Cost Basis" body={(row) => currencyFormat(row.cost_basis)} />
       <Column field="stop" header="Stop (elevation%)" body={StopCell} />
+      <Column field="max_loss" header="Max Loss" body={MaxLossCell} />
       <Column field="last_trade" header="Last" body={(row) => <LastTrade symbol={row.sym} />}></Column>
       <Column field="target" header="Target" body={(row) => currencyFormat(row.target)} />
       <Column field="gainloss" header="G/L" body={(row) => <GainLoss qty={row.qty} symbol={row.sym} costBasis={row.cost_basis} />}></Column>
