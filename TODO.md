@@ -29,7 +29,8 @@
 [x] bracket order placement
 [ ] popup to confirm order
 [ ] cancel pending
-[ ] show asset quote on symbol enter
+[x] show asset quote on symbol enter
+[ ] show asset quote on row click
 [ ] exec button if pending
 [ ] liquidate if open
 [ ] edit stop/target if open
