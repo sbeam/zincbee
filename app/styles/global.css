@@ -15,3 +15,10 @@ body {
 .loss {
   color: red;
 }
+
+.actionHeader {
+  cursor: pointer;
+}
+.actionHeader:hover {
+  text-decoration: underline;
+}

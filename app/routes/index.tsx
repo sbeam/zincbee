@@ -29,16 +29,16 @@ export function links() {
   ]
 }
 
-interface LastTradeProps {
+interface SalientRowProps {
   symbol: string,
   costBasis?: number,
   qty?: number,
+  filled_avg_price?: number,
+  stop?: number,
 }
 
-const LastTrade = ({ symbol }: LastTradeProps) => {
-  // TODO this is really getting the latest quote, not the latest trade via apca. Need
-  // to extend apca to get the latest trade
-  const { isLoading, isError, data, error } = useQuery(
+const useLastTradeQuery = ({ symbol }: SalientRowProps) => {
+  return useQuery(
     ['latest', symbol],
     async () => {
       console.log('fetching latest quote for ', symbol)
@@ -54,6 +54,10 @@ const LastTrade = ({ symbol }: LastTradeProps) => {
       refetchIntervalInBackground: true
     }
   )
+}
+
+const LastTrade = ({ symbol }: SalientRowProps) => {
+  const { isLoading, isError, data, error } = useLastTradeQuery({ symbol })
   if (isLoading) return <p>...</p>
   if (isError && error instanceof Error) return <p>{error.message}</p>
 
@@ -64,7 +68,7 @@ const LastTrade = ({ symbol }: LastTradeProps) => {
   )
 }
 
-const GainLoss = ({ qty, costBasis, symbol }: LastTradeProps) => {
+const GainLoss = ({ qty, costBasis, symbol }: SalientRowProps) => {
   const [gL, setGL] = useState(0)
   const [pct, setPct] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -91,16 +95,25 @@ const GainLoss = ({ qty, costBasis, symbol }: LastTradeProps) => {
   )
 }
 
-const StopCell = ({ stop, filled_avg_price } : { stop: number, filled_avg_price: number }) => {
-  if (stop > 0) {
-    if (filled_avg_price > 0) {
+const StopCell = ({ symbol, stop, filled_avg_price, relative } : SalientRowProps & { relative: boolean }) => {
+  // TODO does not respect cache?
+  const { isLoading, isError, data } = useLastTradeQuery({ symbol })
 
-      let elev = (1 - (stop / filled_avg_price)) * 100
-      return <div style={{color: stopScale(elev).css()}}>{currencyFormat(stop)} ({elev.toFixed(2)}%)</div>
+  if (!stop) return <></>
+
+  if (filled_avg_price) {
+    let elev = (isLoading || isError) ? 0 : ((data[0].price - stop)/stop * 100)
+
+    if (relative) {
+      let stopDiff = ((1 - (stop / filled_avg_price)) * 100).toFixed(2)
+      return <div style={{color: stopScale(elev).css()}}>{stopDiff}% ({elev.toFixed(2)}%)</div>
+    } else {
+      let stopDiff = (isLoading || isError) ? '...' : currencyFormat(data[0].price - stop)
+      return <div style={{color: stopScale(elev).css()}}>{currencyFormat(stop)} ({stopDiff})</div>
     }
-    else {
-      return <div>{currencyFormat(stop)}</div>
-    }
+  }
+  else {
+    return <div>{currencyFormat(stop)}</div>
   }
 }
 
@@ -118,8 +131,15 @@ const MaxLossCell = ({ stop, qty, cost_basis } : { stop: number, qty: number, co
   }
 }
 
+const StopHeader = ({ toggle, relative } : {relative: boolean, toggle: Function}) => {
+  return <div className="actionHeader" onClick={() => toggle()}>
+    {relative ? "Stop (%)" : "Stop ($)"}
+  </div>
+}
+
 const PositionsTable = () => {
   const [selectedRow, setSelectedRow] = useState(null)
+  const [relativeStop, setRelativeStop] = useState(false)
 
   const rowClass = (data: any) => {
     return {
@@ -158,11 +178,19 @@ const PositionsTable = () => {
       <Column field="qty" header="Quantity"></Column>
       <Column field="filled_avg_price" header="Price" body={(row) => currencyFormat(row.filled_avg_price)} />
       <Column field="cost_basis" header="Cost Basis" body={(row) => currencyFormat(row.cost_basis)} />
-      <Column field="stop" header="Stop (elevation%)" body={StopCell} />
+      <Column
+        field="stop"
+        header={<StopHeader relative={relativeStop} toggle={() => setRelativeStop(!relativeStop)} />}
+        body={(row) => <StopCell symbol={row.sym} stop={row.stop} filled_avg_price={row.filled_avg_price} relative={relativeStop} />}
+       />
       <Column field="max_loss" header="Max Loss" body={MaxLossCell} />
       <Column field="last_trade" header="Last" body={(row) => <LastTrade symbol={row.sym} />}></Column>
       <Column field="target" header="Target" body={(row) => currencyFormat(row.target)} />
-      <Column field="gainloss" header="G/L" body={(row) => <GainLoss qty={row.qty} symbol={row.sym} costBasis={row.cost_basis} />}></Column>
+      <Column
+        field="gainloss"
+        header="G/L"
+        body={(row) => <GainLoss qty={row.qty} symbol={row.sym} costBasis={row.cost_basis} />}
+        />
     </DataTable>
   )
 }

@@ -28,9 +28,10 @@
 [x] top row blank fields for sym, qty, limit, stop, target
 [x] bracket order placement
 [ ] popup to confirm order
+[ ] gtc, fill-kill, etc
 [ ] cancel pending
 [x] show asset quote on symbol enter
-[ ] show asset quote on row click
+[ ] show some candles on row expand
 [ ] exec button if pending
 [ ] liquidate if open
 [ ] edit stop/target if open
