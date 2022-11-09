@@ -5,7 +5,7 @@ import TimeAgo from 'react-time-ago'
 const dateFromIso = (iso: string) => new Date(iso)
 
 export default function QuickQuote({symbol}: {symbol: string}) {
-  const { isLoading, isError, error, data: quote } = useQuery(
+  const { isLoading, isError, error, data: quotes } = useQuery(
     ['quote', symbol],
     async () => {
       const response = await fetch(`http://localhost:3001/quote/${symbol}`)
@@ -29,9 +29,9 @@ export default function QuickQuote({symbol}: {symbol: string}) {
   return (
     <>
       <div>
-        <div>Bid/Size: {currencyFormat(quote.bid_price)}/{quote.bid_size}</div>
-        <div>Ask/Size: {currencyFormat(quote.ask_price)}/{quote.ask_size}</div>
-        <div><TimeAgo date={dateFromIso(quote.time)} /></div>
+        <div>Bid/Size: {currencyFormat(quotes[0].bid_price)}/{quotes[0].bid_size}</div>
+        <div>Ask/Size: {currencyFormat(quotes[0].ask_price)}/{quotes[0].ask_size}</div>
+        <div>{ quotes[0].time ? <TimeAgo date={dateFromIso(quotes[0].time)} /> : ""}</div>
       </div>
     </>
   )

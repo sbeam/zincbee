@@ -13,6 +13,7 @@ import icons from "primeicons/primeicons.css"                                //i
 import chroma from 'chroma-js'
 
 import OrderForm from '~/components/order-form'
+import LiquidateForm from '~/components/liquidate-form'
 import { FormattedDate } from '~/components/date'
 import currencyFormat from '~/utils/currency-format'
 
@@ -35,6 +36,7 @@ interface SalientRowProps {
   qty?: number,
   filled_avg_price?: number,
   stop?: number,
+  orderId?: string,
 }
 
 const useLastTradeQuery = ({ symbol }: SalientRowProps) => {
@@ -137,9 +139,40 @@ const StopHeader = ({ toggle, relative } : {relative: boolean, toggle: Function}
   </div>
 }
 
+const Liquidate = (props : SalientRowProps) => {
+  let [showForm, setShowForm] = useState(false)
+
+  return (
+    <>
+      <div onClick={() => setShowForm(!showForm)}>
+        🚰Liquidate
+      </div>
+      <div>
+        {showForm && <LiquidateForm {...props} />}
+      </div>
+    </>
+  )
+}
+
+const ExpandedRow = (row: any) => {
+  console.log('expanded row', row)
+  // TODO https://www.primefaces.org/primereact/panel/
+  return (
+    <div className="expanded-row">
+      <div>
+        {row.sym}!!
+      </div>
+      <div>
+        { row.status === 'filled' && <Liquidate stop={row.stop} symbol={row.sym} orderId={row.id} qty={row.qty}/> }
+      </div>
+    </div>
+  )
+}
+
 const PositionsTable = () => {
   const [selectedRow, setSelectedRow] = useState(null)
   const [relativeStop, setRelativeStop] = useState(false)
+  const [expandedRows, setExpandedRows] = useState([])
 
   const rowClass = (data: any) => {
     return {
@@ -160,6 +193,8 @@ const PositionsTable = () => {
   if (isLoading) return <p>...</p>
   if (isError && error instanceof Error) return <p>{error.message}</p>
 
+  const allowExpansion = data.length > 0
+
   return (
     <DataTable
       value={data}
@@ -172,7 +207,11 @@ const PositionsTable = () => {
       onSelectionChange={e => setSelectedRow(e.value)}
       selectionMode="single"
       dataKey="id"
+      expandedRows={expandedRows}
+      onRowToggle={(e) => setExpandedRows(e.data)}
+      rowExpansionTemplate={ExpandedRow}
       >
+      <Column expander={allowExpansion} style={{ width: '3em' }} />
       <Column field="sym" header="Symbol"></Column>
       <Column field="created_at" header="Entered" body={(row) => <FormattedDate isoString={row.created_at} />}></Column>
       <Column field="qty" header="Quantity"></Column>
