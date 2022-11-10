@@ -8,10 +8,10 @@ import { classNames } from 'primereact/utils'
 import { Dropdown } from 'primereact/dropdown'
 import { ProgressSpinner } from 'primereact/progressspinner'
 
-const liquidate = async (data: { orderId: string, limit: number }) => {
+const liquidate = async (data: { orderId: string, stop: number }) => {
   console.log(data)
-  const response = await fetch('http://localhost:3001/order', {
-    method: 'POST',
+  const response = await fetch('http://localhost:3001/liquidate', {
+    method: 'PATCH',
     headers: {
       'Content-Type': 'application/json'
     },
@@ -27,18 +27,16 @@ const liquidate = async (data: { orderId: string, limit: number }) => {
 export default function LiquidateForm({ stop, orderId } : { stop: number, orderId: string }) {
   const { control, handleSubmit, reset } = useForm()
   const mutation = useMutation({ mutationFn: liquidate })
-  console.log(mutation)
 
   const [orderType, setOrderType] = useState('market')
-  console.log(stop)
 
   const orderTypeOptions = [
     { name: 'Market', value: 'market' },
-    { name: 'Limit', value: 'limit' },
+    { name: 'Sell Stop', value: 'stop' },
   ]
 
   const onSubmit = async (data: any) => {
-    mutation.mutate(Object.assign(data, { orderId }))
+    mutation.mutate(Object.assign(data, { id: orderId, orderType }))
     reset()
   }
 
@@ -46,7 +44,7 @@ export default function LiquidateForm({ stop, orderId } : { stop: number, orderI
     <div>
       <div>
         <h1 className="font-bold">Liquidate</h1>
-        <p className="text-sm text-gray-600">Enter sell limit or market order to liquidate this position</p>
+        <p className="text-sm text-gray-600">Enter sell stop or market order to cancel any outstanding sell orders and liquidate this position.</p>
       </div>
       {mutation.isLoading && <div className=""><ProgressSpinner /></div>}
       {mutation.isError && <div className="text-red-500">Error</div>}
@@ -58,8 +56,8 @@ export default function LiquidateForm({ stop, orderId } : { stop: number, orderI
               <Dropdown optionLabel="name" optionValue="value" value={orderType} options={orderTypeOptions} onChange={(e) => setOrderType(e.value)} />
             </div>
             <div className="col-12 md:col-2">
-              { orderType == 'limit' && <Controller
-                name="limit"
+              { orderType == 'stop' && <Controller
+                name="stop"
                 control={control}
                 defaultValue={stop}
                 rules={{ required: true }}

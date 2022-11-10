@@ -163,7 +163,7 @@ const ExpandedRow = (row: any) => {
         {row.sym}!!
       </div>
       <div>
-        { row.status === 'filled' && <Liquidate stop={row.stop} symbol={row.sym} orderId={row.id} qty={row.qty}/> }
+        { row.status === 'filled' && <Liquidate stop={row.stop} symbol={row.sym} orderId={row.broker_id} qty={row.qty}/> }
       </div>
     </div>
   )

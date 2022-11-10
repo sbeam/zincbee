@@ -8,6 +8,7 @@ import { InputText } from 'primereact/inputtext'
 import { InputNumber } from 'primereact/inputnumber'
 import { Button } from 'primereact/button'
 import { InputSwitch } from 'primereact/inputswitch'
+import { Dropdown } from 'primereact/dropdown'
 import { classNames } from 'primereact/utils'
 
 import QuickQuote from "./quick-quote"
@@ -27,7 +28,8 @@ export default function OrderForm() {
     qty: 0,
     limit: 0,
     stop: 0,
-    target: 0
+    target: 0,
+    time_in_force: 'gtc',
   }
 
   const {
@@ -67,6 +69,13 @@ export default function OrderForm() {
       return <small className="p-error">{error.message}</small>
     }
   }
+
+  const timeInForceOptions = [
+    { name: 'Day', code: 'day' },
+    { name: 'Good Till Cancel', code: 'gtc' },
+    { name: 'Fill or Kill', code: 'fok' },
+    { name: 'Immediate or Cancel', code: 'ioc' }
+  ]
 
   return (
     <>
@@ -115,7 +124,7 @@ export default function OrderForm() {
           </span>
           {getFormErrorMessage('sym')}
         </div>
-        <div className="field col-12 md:col-2">
+        <div className="field col-12 md:col-1">
           <span className="p-float-label">
             <Controller name="qty" control={control} rules={{ required: 'Quantity is required'}} render={({ field, fieldState }) => (
               <InputNumber id={field.name} onChange={event => field.onChange(event.value)} className={classNames({ 'p-invalid': fieldState.invalid })} />
@@ -164,7 +173,7 @@ export default function OrderForm() {
         </div>
         <div className="field col-12 md:col-2">
           <div className="flex align-items-center">
-           <label htmlFor="inputtarget" className="mr-1">Target</label>
+           <label htmlFor="target" className="mr-1">Target</label>
            <Controller name="target" control={control} rules={{ required: 'Target price is required'}} render={({ field, fieldState }) => (
              <InputNumber
                mode="currency"
@@ -181,6 +190,20 @@ export default function OrderForm() {
           </div>
         </div>
         <div className="field col-12 md:col-2">
+           <Controller name="time_in_force" control={control} rules={{ required: true }} render={({ field, fieldState }) => (
+             <Dropdown
+               optionLabel="name"
+               optionValue="code"
+               options={timeInForceOptions}
+               id={field.name}
+               value={field.value || "gtc"}
+               onChange={event => field.onChange(event.value)}
+               placeholder="Select Time in Force"
+               className={classNames({ 'p-invalid': fieldState.invalid })}
+             />)}
+           />
+        </div>
+        <div className="field col-12 md:col-1">
           <Button label="Submit" className="p-button" />
         </div>
         { symbol &&
