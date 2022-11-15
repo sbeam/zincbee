@@ -120,9 +120,9 @@ const StopCell = ({ symbol, stop, filled_avg_price, relative } : SalientRowProps
 }
 
 // Show max loss absolute amount with scary red color if near 1000 (prob useless)
-const MaxLossCell = ({ stop, qty, cost_basis } : { stop: number, qty: number, cost_basis: number }) => {
-  if (stop > 0 && qty > 0) {
-      let max = (stop * qty) - cost_basis
+const MaxLossCell = ({ stop_price, qty, cost_basis } : { stop_price: number, qty: number, cost_basis: number }) => {
+  if (stop_price > 0 && qty > 0) {
+      let max = (stop_price * qty) - cost_basis
       let scale = 1000 // TODO make this a setting
 
       // brought to you by the fact that React will not insert backgoundColor into the style attribute
@@ -220,11 +220,11 @@ const PositionsTable = () => {
       <Column
         field="stop"
         header={<StopHeader relative={relativeStop} toggle={() => setRelativeStop(!relativeStop)} />}
-        body={(row) => <StopCell symbol={row.sym} stop={row.stop} filled_avg_price={row.filled_avg_price} relative={relativeStop} />}
+        body={(row) => <StopCell symbol={row.sym} stop={row.stop_price} filled_avg_price={row.filled_avg_price} relative={relativeStop} />}
        />
       <Column field="max_loss" header="Max Loss" body={MaxLossCell} />
       <Column field="last_trade" header="Last" body={(row) => <LastTrade symbol={row.sym} />}></Column>
-      <Column field="target" header="Target" body={(row) => currencyFormat(row.target)} />
+      <Column field="target_price" header="Target" body={(row) => currencyFormat(row.target_price)} />
       <Column
         field="gainloss"
         header="G/L"
