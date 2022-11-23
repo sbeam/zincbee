@@ -1,5 +1,5 @@
-import { Form, Outlet, useLoaderData } from '@remix-run/react'
-import { useCallback, useEffect, useState } from "react"
+import { Outlet } from '@remix-run/react'
+import { useEffect, useState } from "react"
 import { classNames } from 'primereact/utils'
 import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
@@ -13,9 +13,9 @@ import icons from "primeicons/primeicons.css"                                //i
 import chroma from 'chroma-js'
 
 import OrderForm from '~/components/order-form'
-import LiquidateForm from '~/components/liquidate-form'
 import { FormattedDate } from '~/components/date'
 import currencyFormat from '~/utils/currency-format'
+import { ExpandedLotRow } from '~/components/expanded-lot-row'
 
 const queryClient = new QueryClient()
 
@@ -37,6 +37,10 @@ interface SalientRowProps {
   filled_avg_price?: number,
   stop?: number,
   orderId?: string,
+  limit_price?: number,
+  stop_price?: number,
+  cost_basis?: number,
+  broker_status?: string,
 }
 
 const useLastTradeQuery = ({ symbol }: SalientRowProps) => {
@@ -120,7 +124,11 @@ const StopCell = ({ symbol, stop, filled_avg_price, relative } : SalientRowProps
 }
 
 // Show max loss absolute amount with scary red color if near 1000 (prob useless)
-const MaxLossCell = ({ stop_price, qty, cost_basis } : { stop_price: number, qty: number, cost_basis: number }) => {
+const MaxLossCell = ({ stop_price, limit_price, qty, cost_basis } : SalientRowProps) => {
+  if (!stop_price || !limit_price || !qty) return <></>
+  if (!cost_basis) {
+    cost_basis = qty * limit_price
+  }
   if (stop_price > 0 && qty > 0) {
       let max = (stop_price * qty) - cost_basis
       let scale = 1000 // TODO make this a setting
@@ -129,7 +137,16 @@ const MaxLossCell = ({ stop_price, qty, cost_basis } : { stop_price: number, qty
       // when it is in rgba[] format, but only when in full #rrggbbaa format
       let alpha = Math.round((255 * Math.min(1, Math.abs(max / scale)))).toString(16).padStart(2, '0')
       let rgba = `#993344${alpha}`
-      return <div style={{color: '#fff', backgroundColor: rgba}}>{currencyFormat(max)}</div>
+      return <div style={{backgroundColor: rgba}}>{currencyFormat(max)}</div>
+  }
+}
+
+const PriceCell = ({ filled_avg_price, limit_price } : { filled_avg_price: number, limit_price: number }) => {
+  if (filled_avg_price) {
+    return <div>{currencyFormat(filled_avg_price)}</div>
+  }
+  else if (limit_price) {
+    return <div><em>{currencyFormat(limit_price)}</em></div>
   }
 }
 
@@ -139,44 +156,17 @@ const StopHeader = ({ toggle, relative } : {relative: boolean, toggle: Function}
   </div>
 }
 
-const Liquidate = (props : SalientRowProps) => {
-  let [showForm, setShowForm] = useState(false)
-
-  return (
-    <>
-      <div onClick={() => setShowForm(!showForm)}>
-        🚰Liquidate
-      </div>
-      <div>
-        {showForm && <LiquidateForm {...props} />}
-      </div>
-    </>
-  )
-}
-
-const ExpandedRow = (row: any) => {
-  console.log('expanded row', row)
-  // TODO https://www.primefaces.org/primereact/panel/
-  return (
-    <div className="expanded-row">
-      <div>
-        {row.sym}!!
-      </div>
-      <div>
-        { row.status === 'filled' && <Liquidate stop={row.stop} symbol={row.sym} orderId={row.broker_id} qty={row.qty}/> }
-      </div>
-    </div>
-  )
-}
-
 const PositionsTable = () => {
   const [selectedRow, setSelectedRow] = useState(null)
   const [relativeStop, setRelativeStop] = useState(false)
-  const [expandedRows, setExpandedRows] = useState([])
+  const [expandedRows, setExpandedRows] = useState({})
 
   const rowClass = (data: any) => {
     return {
-      'row-accessories': data.category === 'Accessories'
+      'row-pending': !data.broker_status || data.broker_status === 'new' || data.broker_status === 'pending_new',
+      'row-open': data.status === 'Open',
+      'row-disposed': data.status === 'Disposed',
+      'row-other': data.status === 'Other',
     }
   }
 
@@ -206,16 +196,16 @@ const PositionsTable = () => {
       selection={selectedRow}
       onSelectionChange={e => setSelectedRow(e.value)}
       selectionMode="single"
-      dataKey="id"
+      dataKey="rowid"
       expandedRows={expandedRows}
       onRowToggle={(e) => setExpandedRows(e.data)}
-      rowExpansionTemplate={ExpandedRow}
+      rowExpansionTemplate={ExpandedLotRow}
       >
       <Column expander={allowExpansion} style={{ width: '3em' }} />
       <Column field="sym" header="Symbol"></Column>
       <Column field="created_at" header="Entered" body={(row) => <FormattedDate isoString={row.created_at} />}></Column>
       <Column field="qty" header="Quantity"></Column>
-      <Column field="filled_avg_price" header="Price" body={(row) => currencyFormat(row.filled_avg_price)} />
+      <Column field="price" header="Price" body={(row) => <PriceCell filled_avg_price={row.filled_avg_price} limit_price={row.limit_price} />} />
       <Column field="cost_basis" header="Cost Basis" body={(row) => currencyFormat(row.cost_basis)} />
       <Column
         field="stop"

@@ -22,3 +22,8 @@ body {
 .actionHeader:hover {
   text-decoration: underline;
 }
+
+tr.row-pending td {
+  font-style: italic;
+  color: #999;
+}
