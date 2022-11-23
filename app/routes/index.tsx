@@ -150,6 +150,10 @@ const PriceCell = ({ filled_avg_price, limit_price } : { filled_avg_price: numbe
   }
 }
 
+const StatusCell = ({ status, broker_status, time_in_force } : { status: string, broker_status: string, time_in_force: string }) => {
+  return <div>{status} / {broker_status} ({time_in_force})</div>
+}
+
 const StopHeader = ({ toggle, relative } : {relative: boolean, toggle: Function}) => {
   return <div className="actionHeader" onClick={() => toggle()}>
     {relative ? "Stop (%)" : "Stop ($)"}
@@ -163,7 +167,7 @@ const PositionsTable = () => {
 
   const rowClass = (data: any) => {
     return {
-      'row-pending': !data.broker_status || data.broker_status === 'new' || data.broker_status === 'pending_new',
+      'row-pending': data.status === 'Pending',
       'row-open': data.status === 'Open',
       'row-disposed': data.status === 'Disposed',
       'row-other': data.status === 'Other',
@@ -202,6 +206,7 @@ const PositionsTable = () => {
       rowExpansionTemplate={ExpandedLotRow}
       >
       <Column expander={allowExpansion} style={{ width: '3em' }} />
+      <Column field="status" header="Status" body={(row) => <StatusCell time_in_force={row.time_in_force} status={row.status} broker_status={row.broker_status} />}></Column>
       <Column field="sym" header="Symbol"></Column>
       <Column field="created_at" header="Entered" body={(row) => <FormattedDate isoString={row.created_at} />}></Column>
       <Column field="qty" header="Quantity"></Column>
