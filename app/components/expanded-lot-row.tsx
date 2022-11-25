@@ -1,6 +1,7 @@
 import LiquidateForm from '~/components/liquidate-form'
 import { useState } from "react"
 import { Button } from 'primereact/button'
+import { Message, MessageSeverityType } from 'primereact/message'
 import { useMutation } from "react-query"
 
 const Liquidate = (props : any) => {
@@ -19,12 +20,11 @@ const Liquidate = (props : any) => {
 }
 
 const cancelOrder = async (orderId: string) => {
-  const response = await fetch('http://localhost:3001/order', {
+  const response = await fetch(`http://localhost:3001/order/cccc${orderId}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ orderId })
+    }
   })
   if (!response.ok) {
     throw new Error(`Error: ${response.status}`)
@@ -34,14 +34,45 @@ const cancelOrder = async (orderId: string) => {
 }
 
 const Cancel = (props : { orderId: string }) => {
-  let [showForm, setShowForm] = useState(false)
-  const cancel = useMutation({ mutationFn: cancelOrder })
+  const [showForm, setShowForm] = useState(false)
+  const [message, setMessage] = useState<{ severity: MessageSeverityType, detail: string } | undefined>()
+
+  const cancel = useMutation({
+    mutationFn: cancelOrder,
+    onSuccess: (data, _variables, _context) => {
+      console.log('success', data)
+      setMessage({severity: 'success', detail: 'Order cancellation request sent'})
+    },
+    onMutate: () => {
+      setShowForm(false)
+    }
+  })
+
+  const styles = {
+    error: {
+      color: 'red',
+      fontSize: '0.8em'
+    }
+  }
+
+  const retry = () => {
+    cancel.reset()
+    setMessage(undefined)
+    setShowForm(true)
+  }
 
   return (
     <>
       <div onClick={() => setShowForm(!showForm)}>
         Cancel
       </div>
+      {cancel.error && (
+        <div style={styles.error}>
+          <Message severity="error" text={`There was an error canceling your order: ${cancel.error}`} />
+          <Button className="ml-3" onClick={retry}>Retry</Button>
+        </div>
+      )}
+      {message && <Message severity={message.severity} text={message.detail} />}
       <div>
         {showForm && <Button onClick={() => cancel.mutate(props.orderId)}>Cancel</Button>}
       </div>
@@ -50,10 +81,9 @@ const Cancel = (props : { orderId: string }) => {
 }
 
 export const ExpandedLotRow = (row: any) => {
-  console.log(row)
   // should prob be server side
-  const cancelable = (row: any) => row.status === 'Open' && (row.broker_status === 'new' || row.broker_status === 'pending_new')
-  const liquidateable = (row: any) => row.status === 'Open' && (row.broker_status === 'filled' || row.broker_status === 'partially_filled')
+  const cancelable = (row: any) => row.status === 'Pending'
+  const liquidateable = (row: any) => row.status === 'Open'
 
   // TODO https://www.primefaces.org/primereact/panel/
   return (
@@ -63,7 +93,7 @@ export const ExpandedLotRow = (row: any) => {
       </div>
       <div>
         { liquidateable(row) && <Liquidate stop={row.stop} symbol={row.sym} orderId={row.broker_id} qty={row.qty}/> }
-        { cancelable(row) && <Cancel orderId={row.rowid} />}
+        { cancelable(row) && <Cancel orderId={row.client_id} />}
       </div>
     </div>
   )

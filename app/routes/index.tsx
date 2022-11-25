@@ -148,6 +148,9 @@ const PriceCell = ({ filled_avg_price, limit_price } : { filled_avg_price: numbe
   else if (limit_price) {
     return <div><em>{currencyFormat(limit_price)}</em></div>
   }
+  else {
+    return <></>
+  }
 }
 
 const StatusCell = ({ status, broker_status, time_in_force } : { status: string, broker_status: string, time_in_force: string }) => {
