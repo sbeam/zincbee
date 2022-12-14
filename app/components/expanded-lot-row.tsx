@@ -92,7 +92,7 @@ export const ExpandedLotRow = (row: any) => {
         {row.sym}!!
       </div>
       <div>
-        { liquidateable(row) && <Liquidate stop={row.stop} symbol={row.sym} orderId={row.broker_id} qty={row.qty}/> }
+        { liquidateable(row) && <Liquidate stop={row.stop} symbol={row.sym} orderId={row.client_id} qty={row.qty}/> }
         { cancelable(row) && <Cancel orderId={row.client_id} />}
       </div>
     </div>

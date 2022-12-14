@@ -8,7 +8,7 @@ import { classNames } from 'primereact/utils'
 import { Dropdown } from 'primereact/dropdown'
 import { ProgressSpinner } from 'primereact/progressspinner'
 
-const liquidate = async (data: { orderId: string, stop: number }) => {
+const liquidate = async (data: { orderId: string, stop: number, id: string }) => {
   const response = await fetch('http://localhost:3001/liquidate', {
     method: 'PATCH',
     headers: {
