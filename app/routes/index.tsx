@@ -41,6 +41,9 @@ interface SalientRowProps {
   stop_price?: number,
   cost_basis?: number,
   broker_status?: string,
+  status?: string,
+  dispose_reason?: string,
+  time_in_force?: string,
 }
 
 const useLastTradeQuery = ({ symbol }: SalientRowProps) => {
@@ -101,11 +104,11 @@ const GainLoss = ({ qty, costBasis, symbol }: SalientRowProps) => {
   )
 }
 
-const StopCell = ({ symbol, stop, filled_avg_price, relative } : SalientRowProps & { relative: boolean }) => {
+const StopCell = ({ status, symbol, stop, filled_avg_price, relative } : SalientRowProps & { relative: boolean }) => {
   // TODO does not respect cache?
   const { isLoading, isError, data } = useLastTradeQuery({ symbol })
 
-  if (!stop) return <></>
+  if (!stop || status == 'Canceled' || status == 'Disposed') return <></>
 
   if (filled_avg_price) {
     let elev = (isLoading || isError) ? 0 : ((data[0].price - stop)/stop * 100)
@@ -124,8 +127,8 @@ const StopCell = ({ symbol, stop, filled_avg_price, relative } : SalientRowProps
 }
 
 // Show max loss absolute amount with scary red color if near 1000 (prob useless)
-const MaxLossCell = ({ stop_price, limit_price, qty, cost_basis } : SalientRowProps) => {
-  if (!stop_price || !limit_price || !qty) return <></>
+const MaxLossCell = ({ stop_price, limit_price, qty, cost_basis, status } : SalientRowProps) => {
+  if (!stop_price || !limit_price || !qty || status == 'Canceled' || status == 'Disposed') return <></>
   if (!cost_basis) {
     cost_basis = qty * limit_price
   }
@@ -153,8 +156,14 @@ const PriceCell = ({ filled_avg_price, limit_price } : { filled_avg_price: numbe
   }
 }
 
-const StatusCell = ({ status, broker_status, time_in_force } : { status: string, broker_status: string, time_in_force: string }) => {
-  return <div>{status} / {broker_status} ({time_in_force})</div>
+const StatusCell = ({ status, broker_status, time_in_force, dispose_reason } : SalientRowProps) => {
+  if (status == 'Disposed') {
+    return <div className="status">{dispose_reason}</div>
+  } else if (status == 'Pending') {
+    return <div className="status">{status} / {broker_status} ({time_in_force})</div>
+  } else {
+    return <div className="status">{status}</div>
+  }
 }
 
 const StopHeader = ({ toggle, relative } : {relative: boolean, toggle: Function}) => {
@@ -209,7 +218,7 @@ const PositionsTable = () => {
       rowExpansionTemplate={ExpandedLotRow}
       >
       <Column expander={allowExpansion} style={{ width: '3em' }} />
-      <Column field="status" header="Status" body={(row) => <StatusCell time_in_force={row.time_in_force} status={row.status} broker_status={row.broker_status} />}></Column>
+      <Column field="status" header="Status" body={StatusCell}></Column>
       <Column field="sym" header="Symbol"></Column>
       <Column field="created_at" header="Entered" body={(row) => <FormattedDate isoString={row.created_at} />}></Column>
       <Column field="qty" header="Quantity"></Column>
@@ -218,15 +227,15 @@ const PositionsTable = () => {
       <Column
         field="stop"
         header={<StopHeader relative={relativeStop} toggle={() => setRelativeStop(!relativeStop)} />}
-        body={(row) => <StopCell symbol={row.sym} stop={row.stop_price} filled_avg_price={row.filled_avg_price} relative={relativeStop} />}
+        body={(row) => <StopCell status={row.status} symbol={row.sym} stop={row.stop_price} filled_avg_price={row.filled_avg_price} relative={relativeStop} />}
        />
       <Column field="max_loss" header="Max Loss" body={MaxLossCell} />
+      <Column field="target_price" header="Target" body={(row) => { if (row.status == 'Open' || row.status == 'Pending') return currencyFormat(row.target_price) }} />
       <Column field="last_trade" header="Last" body={(row) => <LastTrade symbol={row.sym} />}></Column>
-      <Column field="target_price" header="Target" body={(row) => currencyFormat(row.target_price)} />
       <Column
         field="gainloss"
         header="G/L"
-        body={(row) => <GainLoss qty={row.qty} symbol={row.sym} costBasis={row.cost_basis} />}
+        body={(row) => { if (row.status == 'Open' || row.status == 'Pending') return <GainLoss qty={row.qty} symbol={row.sym} costBasis={row.cost_basis} /> }}
         />
     </DataTable>
   )

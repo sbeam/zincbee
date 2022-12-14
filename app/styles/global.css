@@ -25,5 +25,9 @@ body {
 
 tr.row-pending td {
   font-style: italic;
+  color: #ada;
+}
+
+tr.row-disposed td {
   color: #999;
 }
