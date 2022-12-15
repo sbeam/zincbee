@@ -31,12 +31,10 @@ export function links() {
 }
 
 interface SalientRowProps {
-  symbol: string,
-  costBasis?: number,
+  sym: string,
   qty?: number,
   filled_avg_price?: number,
   stop?: number,
-  orderId?: string,
   limit_price?: number,
   stop_price?: number,
   cost_basis?: number,
@@ -46,12 +44,12 @@ interface SalientRowProps {
   time_in_force?: string,
 }
 
-const useLastTradeQuery = ({ symbol }: SalientRowProps) => {
+const useLastTradeQuery = ({ sym }: SalientRowProps) => {
   return useQuery(
-    ['latest', symbol],
+    ['latest', sym],
     async () => {
-      console.log('fetching latest quote for ', symbol)
-      const response = await fetch(`http://localhost:3001/latest?sym=${symbol}`)
+      console.log('fetching latest quote for ', sym)
+      const response = await fetch(`http://localhost:3001/latest?sym=${sym}`)
       if (!response.ok) {
         console.log('Network error', response.status)
         throw new Error('Network error')
@@ -65,8 +63,8 @@ const useLastTradeQuery = ({ symbol }: SalientRowProps) => {
   )
 }
 
-const LastTrade = ({ symbol }: SalientRowProps) => {
-  const { isLoading, isError, data, error } = useLastTradeQuery({ symbol })
+const LastTrade = ({ sym }: SalientRowProps) => {
+  const { isLoading, isError, data, error } = useLastTradeQuery({ sym })
   if (isLoading) return <p>...</p>
   if (isError && error instanceof Error) return <p>{error.message}</p>
 
@@ -77,36 +75,38 @@ const LastTrade = ({ symbol }: SalientRowProps) => {
   )
 }
 
-const GainLoss = ({ qty, costBasis, symbol }: SalientRowProps) => {
+const GainLoss = ({ qty, cost_basis, sym, status }: SalientRowProps) => {
   const [gL, setGL] = useState(0)
   const [pct, setPct] = useState(0)
   const [loading, setLoading] = useState(true)
 
+  console.log(sym, qty, cost_basis)
   useEffect(() => {
-    const observer = new QueryObserver(queryClient, { queryKey: ['latest', symbol] })
+    const observer = new QueryObserver(queryClient, { queryKey: ['latest', sym] })
     const unsubscribe = observer.subscribe(( { data }) => {
-      if (costBasis && qty && data instanceof Array) {
-        const gain = (data[0].price * qty) - costBasis
+      if (cost_basis && qty && data instanceof Array) {
+        const gain = (data[0].price * qty) - cost_basis
         setGL(gain)
-        setPct((gain / costBasis) * 100)
-        // console.log(symbol, qty, gain, costBasis)
+        setPct((gain / cost_basis) * 100)
         setLoading(false)
       }
     })
     return unsubscribe
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const unrealized = (status == 'Open' || status == 'Pending')
+
   return (
-    <div className={classNames("gain-loss", { gain: gL > 0, loss: gL < 0})}>
+    <div className={classNames("gain-loss", { gain: gL > 0, loss: gL < 0, unrealized })}>
       {loading ? '...' : currencyFormat(gL)}
       {loading ? '': ` (${pct.toFixed(2)}%)`}
     </div>
   )
 }
 
-const StopCell = ({ status, symbol, stop, filled_avg_price, relative } : SalientRowProps & { relative: boolean }) => {
+const StopCell = ({ status, sym, stop, filled_avg_price, relative } : SalientRowProps & { relative: boolean }) => {
   // TODO does not respect cache?
-  const { isLoading, isError, data } = useLastTradeQuery({ symbol })
+  const { isLoading, isError, data } = useLastTradeQuery({ sym })
 
   if (!stop || status == 'Canceled' || status == 'Disposed') return <></>
 
@@ -227,15 +227,15 @@ const PositionsTable = () => {
       <Column
         field="stop"
         header={<StopHeader relative={relativeStop} toggle={() => setRelativeStop(!relativeStop)} />}
-        body={(row) => <StopCell status={row.status} symbol={row.sym} stop={row.stop_price} filled_avg_price={row.filled_avg_price} relative={relativeStop} />}
+        body={(row) => <StopCell status={row.status} sym={row.sym} stop={row.stop_price} filled_avg_price={row.filled_avg_price} relative={relativeStop} />}
        />
       <Column field="max_loss" header="Max Loss" body={MaxLossCell} />
       <Column field="target_price" header="Target" body={(row) => { if (row.status == 'Open' || row.status == 'Pending') return currencyFormat(row.target_price) }} />
-      <Column field="last_trade" header="Last" body={(row) => <LastTrade symbol={row.sym} />}></Column>
+      <Column field="last_trade" header="Last" body={(row) => <LastTrade sym={row.sym} />}></Column>
       <Column
         field="gainloss"
         header="G/L"
-        body={(row) => { if (row.status == 'Open' || row.status == 'Pending') return <GainLoss qty={row.qty} symbol={row.sym} costBasis={row.cost_basis} /> }}
+        body={GainLoss}
         />
     </DataTable>
   )

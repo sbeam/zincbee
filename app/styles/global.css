@@ -9,11 +9,15 @@ body {
   width: calc(100% - 2rem);
 }
 
-.gain {
+.gain-loss.gain {
   color: green;
 }
-.loss {
+.gain-loss.loss {
   color: red;
+}
+.gain-loss.unrealized {
+  font-style: italic;
+  filter: brightness(0.45);
 }
 
 .actionHeader {
