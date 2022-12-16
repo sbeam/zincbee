@@ -34,7 +34,6 @@ interface SalientRowProps {
   sym: string,
   qty?: number,
   filled_avg_price?: number,
-  stop?: number,
   limit_price?: number,
   stop_price?: number,
   cost_basis?: number,
@@ -48,7 +47,6 @@ const useLastTradeQuery = ({ sym }: SalientRowProps) => {
   return useQuery(
     ['latest', sym],
     async () => {
-      console.log('fetching latest quote for ', sym)
       const response = await fetch(`http://localhost:3001/latest?sym=${sym}`)
       if (!response.ok) {
         console.log('Network error', response.status)
@@ -80,7 +78,6 @@ const GainLoss = ({ qty, cost_basis, sym, status }: SalientRowProps) => {
   const [pct, setPct] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  console.log(sym, qty, cost_basis)
   useEffect(() => {
     const observer = new QueryObserver(queryClient, { queryKey: ['latest', sym] })
     const unsubscribe = observer.subscribe(( { data }) => {
@@ -104,25 +101,25 @@ const GainLoss = ({ qty, cost_basis, sym, status }: SalientRowProps) => {
   )
 }
 
-const StopCell = ({ status, sym, stop, filled_avg_price, relative } : SalientRowProps & { relative: boolean }) => {
+const StopCell = ({ status, sym, stop_price, filled_avg_price, relative } : SalientRowProps & { relative: boolean }) => {
   // TODO does not respect cache?
   const { isLoading, isError, data } = useLastTradeQuery({ sym })
 
-  if (!stop || status == 'Canceled' || status == 'Disposed') return <></>
+  if (!stop_price || status == 'Canceled' || status == 'Disposed') return <></>
 
   if (filled_avg_price) {
-    let elev = (isLoading || isError) ? 0 : ((data[0].price - stop)/stop * 100)
+    let elev = (isLoading || isError) ? 0 : ((data[0].price - stop_price)/stop_price * 100)
 
     if (relative) {
-      let stopDiff = ((1 - (stop / filled_avg_price)) * 100).toFixed(2)
+      let stopDiff = ((1 - (stop_price / filled_avg_price)) * 100).toFixed(2)
       return <div style={{color: stopScale(elev).css()}}>{stopDiff}% ({elev.toFixed(2)}%)</div>
     } else {
-      let stopDiff = (isLoading || isError) ? '...' : currencyFormat(data[0].price - stop)
-      return <div style={{color: stopScale(elev).css()}}>{currencyFormat(stop)} ({stopDiff})</div>
+      let stopDiff = (isLoading || isError) ? '...' : currencyFormat(data[0].price - stop_price)
+      return <div style={{color: stopScale(elev).css()}}>{currencyFormat(stop_price)} ({stopDiff})</div>
     }
   }
   else {
-    return <div>{currencyFormat(stop)}</div>
+    return <div>{currencyFormat(stop_price)}</div>
   }
 }
 
@@ -227,7 +224,7 @@ const PositionsTable = () => {
       <Column
         field="stop"
         header={<StopHeader relative={relativeStop} toggle={() => setRelativeStop(!relativeStop)} />}
-        body={(row) => <StopCell status={row.status} sym={row.sym} stop={row.stop_price} filled_avg_price={row.filled_avg_price} relative={relativeStop} />}
+        body={(row) => <StopCell status={row.status} sym={row.sym} stop_price={row.stop_price} filled_avg_price={row.filled_avg_price} relative={relativeStop} />}
        />
       <Column field="max_loss" header="Max Loss" body={MaxLossCell} />
       <Column field="target_price" header="Target" body={(row) => { if (row.status == 'Open' || row.status == 'Pending') return currencyFormat(row.target_price) }} />
