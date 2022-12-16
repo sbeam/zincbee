@@ -105,17 +105,18 @@ const StopCell = ({ status, sym, stop_price, filled_avg_price, relative } : Sali
   // TODO does not respect cache?
   const { isLoading, isError, data } = useLastTradeQuery({ sym })
 
-  if (!stop_price || status == 'Canceled' || status == 'Disposed') return <></>
+  if (!stop_price || status == 'Canceled') return <></>
 
   if (filled_avg_price) {
     let elev = (isLoading || isError) ? 0 : ((data[0].price - stop_price)/stop_price * 100)
+    const scaleStyle = (status == 'Disposed') ? {} : {color: stopScale(elev).css()}
 
     if (relative) {
       let stopDiff = ((1 - (stop_price / filled_avg_price)) * 100).toFixed(2)
-      return <div style={{color: stopScale(elev).css()}}>{stopDiff}% ({elev.toFixed(2)}%)</div>
+      return <div style={scaleStyle}>{stopDiff}% ({elev.toFixed(2)}%)</div>
     } else {
       let stopDiff = (isLoading || isError) ? '...' : currencyFormat(data[0].price - stop_price)
-      return <div style={{color: stopScale(elev).css()}}>{currencyFormat(stop_price)} ({stopDiff})</div>
+      return <div style={scaleStyle}>{currencyFormat(stop_price)} ({stopDiff})</div>
     }
   }
   else {
@@ -227,7 +228,7 @@ const PositionsTable = () => {
         body={(row) => <StopCell status={row.status} sym={row.sym} stop_price={row.stop_price} filled_avg_price={row.filled_avg_price} relative={relativeStop} />}
        />
       <Column field="max_loss" header="Max Loss" body={MaxLossCell} />
-      <Column field="target_price" header="Target" body={(row) => { if (row.status == 'Open' || row.status == 'Pending') return currencyFormat(row.target_price) }} />
+      <Column field="target_price" header="Target" body={(row) => currencyFormat(row.target_price)} />
       <Column field="last_trade" header="Last" body={(row) => <LastTrade sym={row.sym} />}></Column>
       <Column
         field="gainloss"
