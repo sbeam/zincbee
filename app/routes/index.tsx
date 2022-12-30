@@ -44,6 +44,7 @@ interface SalientRowProps {
   dispose_reason?: string,
   disposed_fill_price?: number,
   time_in_force?: string,
+  target_price?: number,
 }
 
 const useLastTradeQuery = ({ sym }: SalientRowProps) => {
@@ -170,6 +171,17 @@ const PriceCell = ({ qty, sym, filled_avg_price, limit_price } : SalientRowProps
   }
 }
 
+const RiskLevelCell = ({ qty, stop_price, filled_avg_price, limit_price, target_price } : SalientRowProps) => {
+  if (!stop_price || !limit_price || !qty) return <></>
+  const entry_price = filled_avg_price || limit_price
+
+  const reward = Math.abs(target_price - entry_price)
+  const risk = Math.abs(entry_price - stop_price)
+  const rr = reward / risk
+
+  return <div>{rr.toFixed(1)}</div>
+}
+
 const StatusCell = ({ status, broker_status, time_in_force, dispose_reason } : SalientRowProps) => {
   if (status == 'Disposed') {
     return <div className="status">{dispose_reason}</div>
@@ -243,6 +255,7 @@ const PositionsTable = () => {
        />
       <Column field="max_loss" header="Max Loss" body={MaxLossCell} />
       <Column field="target_price" header="Target" body={(row) => currencyFormat(row.target_price)} />
+      <Column field="risk_level" header="R/R" body={RiskLevelCell} />
       <Column field="last_trade" header="Last" body={(row) => <LastTrade sym={row.sym} />}></Column>
       <Column
         field="gainloss"
