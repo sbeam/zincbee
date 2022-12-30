@@ -9,6 +9,7 @@ import theme from "primereact/resources/themes/lara-dark-indigo/theme.css"  //th
 import pr from "primereact/resources/primereact.min.css"                  //core css
 import pf from 'primeflex/primeflex.css';
 import icons from "primeicons/primeicons.css"                                //icons
+import overrides from "../styles/overrides.css"                              //overrides
 
 import chroma from 'chroma-js'
 
@@ -27,6 +28,7 @@ export function links() {
     { rel: "stylesheet", href: pf },
     { rel: "stylesheet", href: theme },
     { rel: "stylesheet", href: icons },
+    { rel: "stylesheet", href: overrides },
   ]
 }
 
@@ -40,6 +42,7 @@ interface SalientRowProps {
   broker_status?: string,
   status?: string,
   dispose_reason?: string,
+  disposed_fill_price?: number,
   time_in_force?: string,
 }
 
@@ -69,6 +72,19 @@ const LastTrade = ({ sym }: SalientRowProps) => {
   return (
     <div className="latest-trade">
       {currencyFormat(data[0].price)}
+    </div>
+  )
+}
+
+const GainLossDisposed = ({ sym, qty, cost_basis, disposed_fill_price }: SalientRowProps) => {
+  if (!qty || !cost_basis || !disposed_fill_price) return <p>...</p>
+
+  const gL = (qty * disposed_fill_price) - (cost_basis * 1.0)
+  const pct = (gL / cost_basis) * 100
+
+  return (
+    <div className={classNames("gain-loss", { gain: gL > 0, loss: gL < 0 })}>
+      {currencyFormat(gL)} ({pct.toFixed(2)}%)
     </div>
   )
 }
@@ -142,12 +158,12 @@ const MaxLossCell = ({ stop_price, limit_price, qty, cost_basis, status } : Sali
   }
 }
 
-const PriceCell = ({ filled_avg_price, limit_price } : { filled_avg_price: number, limit_price: number }) => {
+const PriceCell = ({ qty, sym, filled_avg_price, limit_price } : SalientRowProps) => {
   if (filled_avg_price) {
-    return <div>{currencyFormat(filled_avg_price)}</div>
+    return <div>{qty} {sym}@{currencyFormat(filled_avg_price)}</div>
   }
   else if (limit_price) {
-    return <div><em>{currencyFormat(limit_price)}</em></div>
+    return <div><em>{qty} {sym}@{currencyFormat(limit_price)}</em></div>
   }
   else {
     return <></>
@@ -217,10 +233,8 @@ const PositionsTable = () => {
       >
       <Column expander={allowExpansion} style={{ width: '3em' }} />
       <Column field="status" header="Status" body={StatusCell}></Column>
-      <Column field="sym" header="Symbol"></Column>
       <Column field="created_at" header="Entered" body={(row) => <FormattedDate isoString={row.created_at} />}></Column>
-      <Column field="qty" header="Quantity"></Column>
-      <Column field="price" header="Price" body={(row) => <PriceCell filled_avg_price={row.filled_avg_price} limit_price={row.limit_price} />} />
+      <Column field="price" header="Entry" body={PriceCell}></Column>
       <Column field="cost_basis" header="Cost Basis" body={(row) => currencyFormat(row.cost_basis)} />
       <Column
         field="stop"
@@ -233,7 +247,7 @@ const PositionsTable = () => {
       <Column
         field="gainloss"
         header="G/L"
-        body={GainLoss}
+        body={(row) => row.status == 'Disposed' ? GainLossDisposed(row) : GainLoss(row)}
         />
     </DataTable>
   )
