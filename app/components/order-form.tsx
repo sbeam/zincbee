@@ -4,7 +4,9 @@ import 'primeflex/primeflex.css';
 import 'primeicons/primeicons.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.css'
+import { Panel, PanelHeaderTemplateOptions } from 'primereact/panel'
 import { InputText } from 'primereact/inputtext'
+import { Ripple } from 'primereact/ripple'
 import { InputNumber } from 'primereact/inputnumber'
 import { Button } from 'primereact/button'
 import { InputSwitch } from 'primereact/inputswitch'
@@ -77,67 +79,120 @@ export default function OrderForm() {
     { name: 'Immediate or Cancel', code: 'ioc' }
   ]
 
+      const template = (options: PanelHeaderTemplateOptions) => {
+        const toggleIcon = options.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-up';
+        const className = `${options.className} justify-content-start`;
+        const titleClassName = `${options.titleClassName} pl-1`;
+
+        return (
+            <div className={className}>
+                <button className={options.togglerClassName} onClick={options.onTogglerClick}>
+                    <span className={toggleIcon}></span>
+                    <Ripple />
+                </button>
+                <span className={titleClassName}>
+                    Place Order
+                </span>
+            </div>
+        )
+    }
+
   return (
     <>
     { showMessage && <div className="p-field">TODO: dialog w details</div> }
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="p-fluid grid formgrid">
-        <div className="col-12 md:col-4">
-          Place new order
-        </div>
-        <div className="col-12 pb-1 md:col-2">
-          <div className="flex align-items-center">
-            <InputSwitch id="market" checked={market} onChange={(e) => setMarket(e.value)} />
-            <label htmlFor="market" className="ml-1 text-sm">
-              { market ? 'Market' : 'Limit' } Order
-            </label>
-          </div>
-        </div>
-        <div className="col-12 pb-1 md:col-2">
-          <div className="flex align-items-center">
-            <InputSwitch id="hard_stop" checked={hardStop} onChange={(e) => setHardStop(e.value)} />
-            <label htmlFor="hard_stop" className="ml-1 text-sm">
-              { hardStop ? 'Hard' : 'Soft' }
-            </label>
-          </div>
-        </div>
-        <div className="col-12 pb-1 md:col-2">
-          <div className="flex align-items-center">
-            <InputSwitch id="hard_target" checked={hardTarget} onChange={(e) => setHardTarget(e.value)} />
-            <label htmlFor="hard_target" className="ml-1 text-sm">
-              { hardTarget ? 'Hard' : 'Soft' }
-            </label>
-          </div>
-        </div>
-        <div className="field col-12 md:col-2"></div>
-        <div className="field col-12 md:col-2">
-          <span className="p-float-label">
-            <Controller name="sym" control={control} rules={{ required: 'Symbol is required'}} render={({ field, fieldState }) => (
-              <InputText
-                id={field.name}
-                {...field}
-                className={classNames({ 'p-invalid': fieldState.invalid })}
-                onBlur={(e) => setSymbol(e.target.value)}
-              />
-            )} />
-           <label htmlFor="inputsymbol">Symbol</label>
-          </span>
-          {getFormErrorMessage('sym')}
-        </div>
-        <div className="field col-12 md:col-1">
-          <span className="p-float-label">
-            <Controller name="qty" control={control} rules={{ required: 'Quantity is required'}} render={({ field, fieldState }) => (
-              <InputNumber id={field.name} onChange={event => field.onChange(event.value)} className={classNames({ 'p-invalid': fieldState.invalid })} />
-            )} />
-           <label htmlFor="inputqty">Qty</label>
-          </span>
-          {getFormErrorMessage('qty')}
-        </div>
-        <div className="field col-12 md:col-2">
-          <div className={classNames({hidden: market})}>
+    <Panel toggleable collapsed={true} header="Place new order" headerTemplate={template} style={{marginBottom: '2em'}}>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="p-fluid grid formgrid">
+          <div className="col-12 pb-1 md:col-2">
             <div className="flex align-items-center">
-             <label htmlFor="limit" className="mr-1">Limit</label>
-             <Controller name="limit" control={control} rules={{ required: 'Limit price is required for non-market orders'}} render={({ field, fieldState }) => (
+              <InputSwitch id="market" checked={market} onChange={(e) => setMarket(e.value)} />
+              <label htmlFor="market" className="ml-1 text-sm">
+                { market ? 'Market' : 'Limit' } Order
+              </label>
+            </div>
+          </div>
+          <div className="col-12 pb-1 md:col-2">
+            <div className="flex align-items-center">
+              <InputSwitch id="hard_stop" checked={hardStop} onChange={(e) => setHardStop(e.value)} />
+              <label htmlFor="hard_stop" className="ml-1 text-sm">
+                { hardStop ? 'Hard' : 'Soft' }
+              </label>
+            </div>
+          </div>
+          <div className="col-12 pb-1 md:col-2">
+            <div className="flex align-items-center">
+              <InputSwitch id="hard_target" checked={hardTarget} onChange={(e) => setHardTarget(e.value)} />
+              <label htmlFor="hard_target" className="ml-1 text-sm">
+                { hardTarget ? 'Hard' : 'Soft' }
+              </label>
+            </div>
+          </div>
+          <div className="field col-12 md:col-2"></div>
+          <div className="field col-12 md:col-2">
+            <span className="p-float-label">
+              <Controller name="sym" control={control} rules={{ required: 'Symbol is required'}} render={({ field, fieldState }) => (
+                <InputText
+                  id={field.name}
+                  {...field}
+                  className={classNames({ 'p-invalid': fieldState.invalid })}
+                  onBlur={(e) => setSymbol(e.target.value)}
+                />
+              )} />
+             <label htmlFor="inputsymbol">Symbol</label>
+            </span>
+            {getFormErrorMessage('sym')}
+          </div>
+          <div className="field col-12 md:col-1">
+            <span className="p-float-label">
+              <Controller name="qty" control={control} rules={{ required: 'Quantity is required'}} render={({ field, fieldState }) => (
+                <InputNumber id={field.name} onChange={event => field.onChange(event.value)} className={classNames({ 'p-invalid': fieldState.invalid })} />
+              )} />
+             <label htmlFor="inputqty">Qty</label>
+            </span>
+            {getFormErrorMessage('qty')}
+          </div>
+          <div className="field col-12 md:col-2">
+            <div className={classNames({hidden: market})}>
+              <div className="flex align-items-center">
+               <label htmlFor="limit" className="mr-1">Limit</label>
+               <Controller name="limit" control={control} rules={{ required: 'Limit price is required for non-market orders'}} render={({ field, fieldState }) => (
+                 <InputNumber
+                   mode="currency"
+                   currency="USD"
+                   locale="en-US"
+                   id={field.name}
+                   onChange={event => field.onChange(event.value)}
+                   className={classNames({ 'p-invalid': fieldState.invalid })}
+                 />)}
+               />
+              </div>
+              <div className="w-full">
+                {getFormErrorMessage('limit')}
+              </div>
+            </div>
+          </div>
+          <div className="field col-12 md:col-2">
+            <div className="flex align-items-center">
+             <label htmlFor="stop" className="mr-1">Stop</label>
+               <Controller name="stop" control={control} rules={{ required: 'Stop price is required'}} render={({ field, fieldState }) => (
+                 <InputNumber
+                   mode="currency"
+                   currency="USD"
+                   locale="en-US"
+                   id={field.name}
+                   onChange={event => field.onChange(event.value)}
+                   className={classNames({ 'p-invalid': fieldState.invalid })}
+                 />)}
+               />
+            </div>
+            <div className="w-full">
+              {getFormErrorMessage('stop')}
+            </div>
+          </div>
+          <div className="field col-12 md:col-2">
+            <div className="flex align-items-center">
+             <label htmlFor="target" className="mr-1">Target</label>
+             <Controller name="target" control={control} rules={{ required: 'Target price is required'}} render={({ field, fieldState }) => (
                <InputNumber
                  mode="currency"
                  currency="USD"
@@ -149,70 +204,34 @@ export default function OrderForm() {
              />
             </div>
             <div className="w-full">
-              {getFormErrorMessage('limit')}
+              {getFormErrorMessage('target')}
             </div>
           </div>
-        </div>
-        <div className="field col-12 md:col-2">
-          <div className="flex align-items-center">
-           <label htmlFor="stop" className="mr-1">Stop</label>
-             <Controller name="stop" control={control} rules={{ required: 'Stop price is required'}} render={({ field, fieldState }) => (
-               <InputNumber
-                 mode="currency"
-                 currency="USD"
-                 locale="en-US"
+          <div className="field col-12 md:col-2">
+             <Controller name="time_in_force" control={control} rules={{ required: true }} render={({ field, fieldState }) => (
+               <Dropdown
+                 optionLabel="name"
+                 optionValue="code"
+                 options={timeInForceOptions}
                  id={field.name}
+                 value={field.value || "gtc"}
                  onChange={event => field.onChange(event.value)}
+                 placeholder="Select Time in Force"
                  className={classNames({ 'p-invalid': fieldState.invalid })}
                />)}
              />
           </div>
-          <div className="w-full">
-            {getFormErrorMessage('stop')}
+          <div className="field col-12 md:col-1">
+            <Button label="Submit" className="p-button" />
           </div>
-        </div>
-        <div className="field col-12 md:col-2">
-          <div className="flex align-items-center">
-           <label htmlFor="target" className="mr-1">Target</label>
-           <Controller name="target" control={control} rules={{ required: 'Target price is required'}} render={({ field, fieldState }) => (
-             <InputNumber
-               mode="currency"
-               currency="USD"
-               locale="en-US"
-               id={field.name}
-               onChange={event => field.onChange(event.value)}
-               className={classNames({ 'p-invalid': fieldState.invalid })}
-             />)}
-           />
-          </div>
-          <div className="w-full">
-            {getFormErrorMessage('target')}
-          </div>
-        </div>
-        <div className="field col-12 md:col-2">
-           <Controller name="time_in_force" control={control} rules={{ required: true }} render={({ field, fieldState }) => (
-             <Dropdown
-               optionLabel="name"
-               optionValue="code"
-               options={timeInForceOptions}
-               id={field.name}
-               value={field.value || "gtc"}
-               onChange={event => field.onChange(event.value)}
-               placeholder="Select Time in Force"
-               className={classNames({ 'p-invalid': fieldState.invalid })}
-             />)}
-           />
-        </div>
-        <div className="field col-12 md:col-1">
-          <Button label="Submit" className="p-button" />
-        </div>
-        { symbol &&
-          <div className="field col-12 md:col-10">
-            <QuickQuote symbol={symbol} />
-          </div>
-        }
-      </div>
-    </form>
+          { symbol &&
+            <div className="field col-12 md:col-10">
+              <QuickQuote symbol={symbol} />
+            </div>
+          }
+         </div>
+       </form>
+      </Panel>
     </>
   )
 }
