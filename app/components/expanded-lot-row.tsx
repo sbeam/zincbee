@@ -105,7 +105,6 @@ export const ExpandedLotRow = (row: any) => {
 
   const firstColStyle = { width: '10em' }
 
-  // TODO https://www.primefaces.org/primereact/panel/
   return (
     <div className="flex flex-row flex-wrap">
       <div className="flex flex-col w-6">

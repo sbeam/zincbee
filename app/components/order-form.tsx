@@ -4,7 +4,7 @@ import 'primeflex/primeflex.css';
 import 'primeicons/primeicons.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.css'
-import { Panel, PanelHeaderTemplateOptions } from 'primereact/panel'
+import { Sidebar } from 'primereact/sidebar'
 import { InputText } from 'primereact/inputtext'
 import { Ripple } from 'primereact/ripple'
 import { InputNumber } from 'primereact/inputnumber'
@@ -32,6 +32,7 @@ export default function OrderForm() {
     stop: 0,
     target: 0,
     time_in_force: 'gtc',
+    side: 'long',
   }
 
   const {
@@ -79,101 +80,89 @@ export default function OrderForm() {
     { name: 'Immediate or Cancel', code: 'ioc' }
   ]
 
-      const template = (options: PanelHeaderTemplateOptions) => {
-        const toggleIcon = options.collapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-up';
-        const className = `${options.className} justify-content-start`;
-        const titleClassName = `${options.titleClassName} pl-1`;
+  const sideOptions = [
+    { name: 'Long', code: 'long' },
+    { name: 'Short', code: 'short' },
+  ]
 
-        return (
-            <div className={className}>
-                <button className={options.togglerClassName} onClick={options.onTogglerClick}>
-                    <span className={toggleIcon}></span>
-                    <Ripple />
-                </button>
-                <span className={titleClassName}>
-                    Place Order
-                </span>
-            </div>
-        )
-    }
+  const [visibleLeft, setVisibleLeft] = useState(true)
 
   return (
     <>
-    { showMessage && <div className="p-field">TODO: dialog w details</div> }
-    <Panel toggleable collapsed={true} header="Place new order" headerTemplate={template} style={{marginBottom: '2em'}}>
+    <Sidebar visible={visibleLeft} onHide={() => setVisibleLeft(false)} style={{width: '22rem'}}>
+      <h1 className="bordered-small-header mb-3">Place new order</h1>
+      { showMessage && <div className="p-field">TODO: dialog w details</div> }
       <form onSubmit={handleSubmit(onSubmit)}>
-        <div className="p-fluid grid formgrid">
-          <div className="col-12 pb-1 md:col-2">
-            <div className="flex align-items-center">
-              <InputSwitch id="market" checked={market} onChange={(e) => setMarket(e.value)} />
-              <label htmlFor="market" className="ml-1 text-sm">
-                { market ? 'Market' : 'Limit' } Order
-              </label>
-            </div>
-          </div>
-          <div className="col-12 pb-1 md:col-2">
-            <div className="flex align-items-center">
-              <InputSwitch id="hard_stop" checked={hardStop} onChange={(e) => setHardStop(e.value)} />
-              <label htmlFor="hard_stop" className="ml-1 text-sm">
-                { hardStop ? 'Hard' : 'Soft' }
-              </label>
-            </div>
-          </div>
-          <div className="col-12 pb-1 md:col-2">
-            <div className="flex align-items-center">
-              <InputSwitch id="hard_target" checked={hardTarget} onChange={(e) => setHardTarget(e.value)} />
-              <label htmlFor="hard_target" className="ml-1 text-sm">
-                { hardTarget ? 'Hard' : 'Soft' }
-              </label>
-            </div>
-          </div>
-          <div className="field col-12 md:col-2"></div>
-          <div className="field col-12 md:col-2">
-            <span className="p-float-label">
+        <div className="flex align-items-center mb-3">
+          <div className="flex flex-grow-1">
+            <span className="field">
+              <label className="block text-sm mb-1" htmlFor="sym">Symbol</label>
               <Controller name="sym" control={control} rules={{ required: 'Symbol is required'}} render={({ field, fieldState }) => (
                 <InputText
                   id={field.name}
                   {...field}
-                  className={classNames({ 'p-invalid': fieldState.invalid })}
+                  className={classNames('w-6rem', { 'p-invalid': fieldState.invalid })}
                   onBlur={(e) => setSymbol(e.target.value)}
                 />
               )} />
-             <label htmlFor="inputsymbol">Symbol</label>
             </span>
             {getFormErrorMessage('sym')}
           </div>
-          <div className="field col-12 md:col-1">
-            <span className="p-float-label">
+          <div className="flex flex-grow-1">
+            <span className="field">
+              <label className="block text-sm mb-1" htmlFor="qty">Qty</label>
               <Controller name="qty" control={control} rules={{ required: 'Quantity is required'}} render={({ field, fieldState }) => (
-                <InputNumber id={field.name} onChange={event => field.onChange(event.value)} className={classNames({ 'p-invalid': fieldState.invalid })} />
+                <InputNumber
+                  id={field.name}
+                  onChange={event => field.onChange(event.value)}
+                  className={classNames('input-4em', { 'p-invalid': fieldState.invalid })}
+                  />
               )} />
-             <label htmlFor="inputqty">Qty</label>
             </span>
             {getFormErrorMessage('qty')}
           </div>
-          <div className="field col-12 md:col-2">
-            <div className={classNames({hidden: market})}>
-              <div className="flex align-items-center">
-               <label htmlFor="limit" className="mr-1">Limit</label>
-               <Controller name="limit" control={control} rules={{ required: 'Limit price is required for non-market orders'}} render={({ field, fieldState }) => (
-                 <InputNumber
-                   mode="currency"
-                   currency="USD"
-                   locale="en-US"
+          <div className="flex flex-grow-1" style={{marginTop: '0.3rem'}}>
+               <Controller name="side" control={control} rules={{ required: true }} render={({ field, fieldState }) => (
+                 <Dropdown
+                   optionLabel="name"
+                   optionValue="code"
+                   options={sideOptions}
                    id={field.name}
+                   value={field.value || "long"}
                    onChange={event => field.onChange(event.value)}
                    className={classNames({ 'p-invalid': fieldState.invalid })}
                  />)}
                />
-              </div>
-              <div className="w-full">
-                {getFormErrorMessage('limit')}
-              </div>
+          </div>
+        </div>
+        <div className="flex align-items-center">
+          <div className="flex flex-grow-1 justify-content-end">
+            <label htmlFor="limit" className="mr-3">{ market ? 'Market Order' : 'Buy Limit' }</label>
+          </div>
+          <div className="flex flex-none">
+             <Controller name="limit" control={control} rules={{ required: 'Limit price is required for non-market orders'}} render={({ field, fieldState }) => (
+               <InputNumber
+                 mode="currency"
+                 currency="USD"
+                 locale="en-US"
+                 id={field.name}
+                 onChange={event => field.onChange(event.value)}
+                 className={classNames('input-7em', { 'p-disabled': market, 'p-invalid': fieldState.invalid })}
+               />)}
+             />
+          </div>
+          <div className="flex flex-none">
+            <div className="flex flex-none" style={{scale: '60%'}}>
+              <InputSwitch id="market" checked={market} onChange={(e) => setMarket(e.value)} tooltip={ market ? 'Market Order' : 'Limit order' } tooltipOptions={{position: 'bottom'}} />
             </div>
           </div>
-          <div className="field col-12 md:col-2">
-            <div className="flex align-items-center">
-             <label htmlFor="stop" className="mr-1">Stop</label>
+        </div>
+        <div className="text-xs mb-3 text-right">{getFormErrorMessage('limit')}</div>
+        <div className="flex align-items-center">
+           <div className="flex flex-grow-1 justify-content-end">
+             <label htmlFor="stop" className="mr-3">Sell Stop</label>
+           </div>
+           <div className="flex flex-none">
                <Controller name="stop" control={control} rules={{ required: 'Stop price is required'}} render={({ field, fieldState }) => (
                  <InputNumber
                    mode="currency"
@@ -181,17 +170,22 @@ export default function OrderForm() {
                    locale="en-US"
                    id={field.name}
                    onChange={event => field.onChange(event.value)}
-                   className={classNames({ 'p-invalid': fieldState.invalid })}
+                   className={classNames('input-7em', { 'p-invalid': fieldState.invalid })}
                  />)}
                />
-            </div>
-            <div className="w-full">
-              {getFormErrorMessage('stop')}
-            </div>
-          </div>
-          <div className="field col-12 md:col-2">
-            <div className="flex align-items-center">
-             <label htmlFor="target" className="mr-1">Target</label>
+           </div>
+           <div className="flex flex-none">
+             <div className="flex flex-none" style={{scale: '60%'}}>
+               <InputSwitch id="hard_stop" checked={hardStop} onChange={(e) => setHardStop(e.value)} tooltip={ hardStop ? 'Hard stop' : 'Soft stop' } tooltipOptions={{position: 'bottom'}} />
+             </div>
+           </div>
+        </div>
+        <div className="text-xs mb-3 text-right">{getFormErrorMessage('stop')}</div>
+        <div className="flex align-items-center">
+           <div className="flex flex-grow-1 justify-content-end">
+             <label htmlFor="target" className="mr-3">Profit Target</label>
+           </div>
+           <div className="flex flex-none">
              <Controller name="target" control={control} rules={{ required: 'Target price is required'}} render={({ field, fieldState }) => (
                <InputNumber
                  mode="currency"
@@ -199,15 +193,24 @@ export default function OrderForm() {
                  locale="en-US"
                  id={field.name}
                  onChange={event => field.onChange(event.value)}
-                 className={classNames({ 'p-invalid': fieldState.invalid })}
+                 className={classNames('input-7em', {'p-invalid': fieldState.invalid })}
                />)}
              />
-            </div>
-            <div className="w-full">
-              {getFormErrorMessage('target')}
-            </div>
-          </div>
-          <div className="field col-12 md:col-2">
+           </div>
+           <div className="flex flex-none">
+             <div className="flex flex-none" style={{scale: '60%'}}>
+               <InputSwitch id="hard_target" checked={hardTarget} onChange={(e) => setHardTarget(e.value)} tooltip={ hardTarget ? 'Hard target' : 'Soft target' } tooltipOptions={{position: 'bottom'}} />
+             </div>
+           </div>
+        </div>
+
+        <div className="text-xs mb-3 text-right">{getFormErrorMessage('target')}</div>
+
+        <div className="flex align-items-center">
+           <div className="flex flex-grow-1 justify-content-end">
+             <label htmlFor="stop" className="mr-3 text-sm white-space-nowrap">Time in Force</label>
+           </div>
+           <div className="flex flex-none justify-content-end">
              <Controller name="time_in_force" control={control} rules={{ required: true }} render={({ field, fieldState }) => (
                <Dropdown
                  optionLabel="name"
@@ -221,17 +224,21 @@ export default function OrderForm() {
                />)}
              />
           </div>
-          <div className="field col-12 md:col-1">
-            <Button label="Submit" className="p-button" />
-          </div>
+        </div>
+        <div className="field grid">
+          <div className="col">
           { symbol &&
             <div className="field col-12 md:col-10">
               <QuickQuote symbol={symbol} />
             </div>
           }
          </div>
+        </div>
+        <div className="flex align-items-end justify-content-end">
+          <Button label="Submit" className="flex p-button" style={{scale: '80%'}}/>
+        </div>
        </form>
-      </Panel>
+      </Sidebar>
     </>
   )
 }

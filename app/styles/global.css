@@ -35,3 +35,15 @@ tr.row-pending td {
 tr.row-disposed td {
   color: #999;
 }
+
+.input-4em input {
+  width: 4em;
+}
+.input-7em input {
+  width: 7em;
+}
+
+h1.bordered-small-header {
+  font-size: 1em;
+  border-bottom: 1px solid var(--blue-400);
+}
