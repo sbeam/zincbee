@@ -4,6 +4,8 @@ import TimeAgo from 'react-time-ago'
 
 const dateFromIso = (iso: string) => new Date(iso)
 
+// TODO: use snapshot endpoint and show all this cool stuff
+// https://alpaca.markets/docs/api-references/market-data-api/stock-pricing-data/historical/#snapshot
 export default function QuickQuote({symbol}: {symbol: string}) {
   const { isLoading, isError, error, data: quotes } = useQuery(
     ['quote', symbol],
@@ -29,9 +31,9 @@ export default function QuickQuote({symbol}: {symbol: string}) {
   return (
     <>
       <div>
-        <div>Bid/Size: {currencyFormat(quotes[0].bid_price)}/{quotes[0].bid_size}</div>
+        <div>Bid/Size: <span style={{ backgroundColor: 'var(--red-500)' }}>{currencyFormat(quotes[0].bid_price)}/{quotes[0].bid_size}</span></div>
         <div>Ask/Size: {currencyFormat(quotes[0].ask_price)}/{quotes[0].ask_size}</div>
-        <div>{ quotes[0].time ? <TimeAgo date={dateFromIso(quotes[0].time)} /> : ""}</div>
+        <div className="text-sm">{ quotes[0].time ? <TimeAgo date={dateFromIso(quotes[0].time)} /> : ""}</div>
       </div>
     </>
   )

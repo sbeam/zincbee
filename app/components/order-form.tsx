@@ -93,6 +93,9 @@ export default function OrderForm() {
       <h1 className="bordered-small-header mb-3">Place new order</h1>
       { showMessage && <div className="p-field">TODO: dialog w details</div> }
       <form onSubmit={handleSubmit(onSubmit)}>
+        <div className="block mb-3 mt-3">
+          { symbol ? <QuickQuote symbol={symbol} /> : <p className="text-sm">Enter a symbol and quantity for the order</p> }
+        </div>
         <div className="flex align-items-center mb-3">
           <div className="flex flex-grow-1">
             <span className="field">
@@ -224,15 +227,6 @@ export default function OrderForm() {
                />)}
              />
           </div>
-        </div>
-        <div className="field grid">
-          <div className="col">
-          { symbol &&
-            <div className="field col-12 md:col-10">
-              <QuickQuote symbol={symbol} />
-            </div>
-          }
-         </div>
         </div>
         <div className="flex align-items-end justify-content-end">
           <Button label="Submit" className="flex p-button" style={{scale: '80%'}}/>
