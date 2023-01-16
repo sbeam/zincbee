@@ -6,7 +6,7 @@ import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.css'
 import { Sidebar } from 'primereact/sidebar'
 import { InputText } from 'primereact/inputtext'
-import { Ripple } from 'primereact/ripple'
+import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog'
 import { InputNumber } from 'primereact/inputnumber'
 import { Button } from 'primereact/button'
 import { InputSwitch } from 'primereact/inputswitch'
@@ -14,6 +14,7 @@ import { Dropdown } from 'primereact/dropdown'
 import { classNames } from 'primereact/utils'
 
 import QuickQuote from "./quick-quote"
+import currencyFormat from '~/utils/currency-format'
 
 export default function OrderForm() {
   const [symbol, setSymbol] = useState('')
@@ -22,8 +23,7 @@ export default function OrderForm() {
   const [hardStop, setHardStop] = useState(true)
   const [hardTarget, setHardTarget] = useState(true)
 
-  const [formData, setFormData] = useState({})
-  const [showMessage, setShowMessage] = useState(false)
+  const [showMessage, setShowMessage] = useState(false) // TODO a toast
 
   const defaultValues = {
     sym: '',
@@ -33,6 +33,8 @@ export default function OrderForm() {
     target: 0,
     time_in_force: 'gtc',
     side: 'long',
+    market: false,
+    hard_stop: true
   }
 
   const {
@@ -43,24 +45,41 @@ export default function OrderForm() {
   } = useForm({ defaultValues })
 
   const onSubmit = async (data: any) => {
+    console.log(data)
     try {
-      setFormData(data)
-      const response = await fetch('http://localhost:3001/order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
+      confirmDialog({
+        position: 'left',
+        message: <div style={{minWidth: '22rem'}}>
+          <h4 className="mt-0 mb-3">Confirm Order</h4>
+          <div>{data.qty} <span className="txt-bold">{data.sym}</span> {data.side}</div>
+          { data.market && <div>Market Order</div> }
+          { data.side == 'long' && !data.market && <div>Buy limit: {currencyFormat(data.limit)}</div> }
+          { data.side == 'short' && !data.market && <div>Sell to short limit: {currencyFormat(data.limit)}</div> }
+          <div>Stop Loss: {currencyFormat(data.stop)} { data.hard_stop ? "" : "(soft)" }</div>
+          <div>Profit target: {currencyFormat(data.target)}</div>
+          <div>Time in force: {data.time_in_force}</div>
+          <div>Est. Cost Basis: {currencyFormat(data.qty * data.limit)}</div>
+          <div>Risk/Reward: {((data.target - data.limit) / (data.limit - data.stop)).toFixed(1)}</div>
+        </div>,
+        accept: async () => {
+          const response = await fetch('http://localhost:3001/order', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+          })
+
+          if (!response.ok) {
+            throw new Error(`Error: ${response.status}`)
+          }
+          const result = await response.json()
+
+          setShowMessage(true)
+          reset()
+          return result
+        }
       })
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`)
-      }
-      const result = await response.json()
-
-      setShowMessage(true)
-      reset()
-      return result
     } catch (error) {
       console.log(error)
     }
@@ -87,8 +106,11 @@ export default function OrderForm() {
 
   const [visibleLeft, setVisibleLeft] = useState(true)
 
+  const isPositiveNumber = (value: number) => value > 0
+
   return (
     <>
+    <ConfirmDialog />
     <Sidebar visible={visibleLeft} onHide={() => setVisibleLeft(false)} style={{width: '22rem'}}>
       <h1 className="bordered-small-header mb-3">Place new order</h1>
       { showMessage && <div className="p-field">TODO: dialog w details</div> }
@@ -96,9 +118,9 @@ export default function OrderForm() {
         <div className="block mb-3 mt-3">
           { symbol ? <QuickQuote symbol={symbol} /> : <p className="text-sm">Enter a symbol and quantity for the order</p> }
         </div>
-        <div className="flex align-items-center mb-3">
+        <div className="flex align-items-center">
           <div className="flex flex-grow-1">
-            <span className="field">
+            <span className="field mb-1">
               <label className="block text-sm mb-1" htmlFor="sym">Symbol</label>
               <Controller name="sym" control={control} rules={{ required: 'Symbol is required'}} render={({ field, fieldState }) => (
                 <InputText
@@ -109,12 +131,11 @@ export default function OrderForm() {
                 />
               )} />
             </span>
-            {getFormErrorMessage('sym')}
           </div>
           <div className="flex flex-grow-1">
-            <span className="field">
+            <span className="field mb-1">
               <label className="block text-sm mb-1" htmlFor="qty">Qty</label>
-              <Controller name="qty" control={control} rules={{ required: 'Quantity is required'}} render={({ field, fieldState }) => (
+              <Controller name="qty" control={control} rules={{ required: 'Quantity is required', validate: isPositiveNumber }} render={({ field, fieldState }) => (
                 <InputNumber
                   id={field.name}
                   onChange={event => field.onChange(event.value)}
@@ -122,9 +143,8 @@ export default function OrderForm() {
                   />
               )} />
             </span>
-            {getFormErrorMessage('qty')}
           </div>
-          <div className="flex flex-grow-1" style={{marginTop: '0.3rem'}}>
+          <div className="flex flex-grow-1 mt-3">
                <Controller name="side" control={control} rules={{ required: true }} render={({ field, fieldState }) => (
                  <Dropdown
                    optionLabel="name"
@@ -138,12 +158,16 @@ export default function OrderForm() {
                />
           </div>
         </div>
+        <div className="mb-3" style={{minHeight: '1rem'}}>
+          <div style={{display: 'block'}}>{getFormErrorMessage('sym')}</div>
+          <div style={{display: 'block'}}>{getFormErrorMessage('qty')}</div>
+        </div>
         <div className="flex align-items-center">
           <div className="flex flex-grow-1 justify-content-end">
             <label htmlFor="limit" className="mr-3">{ market ? 'Market Order' : 'Buy Limit' }</label>
           </div>
           <div className="flex flex-none">
-             <Controller name="limit" control={control} rules={{ required: 'Limit price is required for non-market orders'}} render={({ field, fieldState }) => (
+             <Controller name="limit" control={control} rules={{ required: market ? false : 'Limit price is required for non-market orders', validate: isPositiveNumber }} render={({ field, fieldState }) => (
                <InputNumber
                  mode="currency"
                  currency="USD"
@@ -156,7 +180,11 @@ export default function OrderForm() {
           </div>
           <div className="flex flex-none">
             <div className="flex flex-none" style={{scale: '60%'}}>
-              <InputSwitch id="market" checked={market} onChange={(e) => setMarket(e.value)} tooltip={ market ? 'Market Order' : 'Limit order' } tooltipOptions={{position: 'bottom'}} />
+             <Controller name="market" control={control} render={({ field }) => (
+               <InputSwitch id={field.name} checked={field.value} onChange={(e) => { field.onChange(e.value); setMarket(e.value)}} tooltip={ market ? 'Market Order' : 'Limit order' } tooltipOptions={{position: 'bottom'}} />
+
+               )}
+             />
             </div>
           </div>
         </div>
@@ -166,7 +194,7 @@ export default function OrderForm() {
              <label htmlFor="stop" className="mr-3">Sell Stop</label>
            </div>
            <div className="flex flex-none">
-               <Controller name="stop" control={control} rules={{ required: 'Stop price is required'}} render={({ field, fieldState }) => (
+               <Controller name="stop" control={control} rules={{ required: 'Stop price is required.', validate: isPositiveNumber }} render={({ field, fieldState }) => (
                  <InputNumber
                    mode="currency"
                    currency="USD"
@@ -178,9 +206,12 @@ export default function OrderForm() {
                />
            </div>
            <div className="flex flex-none">
-             <div className="flex flex-none" style={{scale: '60%'}}>
-               <InputSwitch id="hard_stop" checked={hardStop} onChange={(e) => setHardStop(e.value)} tooltip={ hardStop ? 'Hard stop' : 'Soft stop' } tooltipOptions={{position: 'bottom'}} />
-             </div>
+             <Controller name="hard_stop" control={control} render={({ field }) => (
+               <div className="flex flex-none" style={{scale: '60%'}}>
+                 <InputSwitch id={field.name} checked={field.value} onChange={(e) => { field.onChange(e.value); setHardStop(e.value)}} tooltip={ hardStop ? 'Hard stop' : 'Soft stop' } tooltipOptions={{position: 'bottom'}} />
+               </div>
+               )}
+             />
            </div>
         </div>
         <div className="text-xs mb-3 text-right">{getFormErrorMessage('stop')}</div>
@@ -189,7 +220,7 @@ export default function OrderForm() {
              <label htmlFor="target" className="mr-3">Profit Target</label>
            </div>
            <div className="flex flex-none">
-             <Controller name="target" control={control} rules={{ required: 'Target price is required'}} render={({ field, fieldState }) => (
+             <Controller name="target" control={control} rules={{ required: 'Target price is required', validate: isPositiveNumber}} render={({ field, fieldState }) => (
                <InputNumber
                  mode="currency"
                  currency="USD"
@@ -228,7 +259,7 @@ export default function OrderForm() {
              />
           </div>
         </div>
-        <div className="flex align-items-end justify-content-end">
+        <div className="flex align-items-end justify-content-end mt-4">
           <Button label="Submit" className="flex p-button" style={{scale: '80%'}}/>
         </div>
        </form>

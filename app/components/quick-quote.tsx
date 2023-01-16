@@ -32,7 +32,7 @@ export default function QuickQuote({symbol}: {symbol: string}) {
     <>
       <div>
         <div>Bid/Size: <span style={{ backgroundColor: 'var(--red-500)' }}>{currencyFormat(quotes[0].bid_price)}/{quotes[0].bid_size}</span></div>
-        <div>Ask/Size: {currencyFormat(quotes[0].ask_price)}/{quotes[0].ask_size}</div>
+        <div>Ask/Size: <span style={{ backgroundColor: 'var(--green-500)' }}>{currencyFormat(quotes[0].ask_price)}/{quotes[0].ask_size}</span></div>
         <div className="text-sm">{ quotes[0].time ? <TimeAgo date={dateFromIso(quotes[0].time)} /> : ""}</div>
       </div>
     </>
