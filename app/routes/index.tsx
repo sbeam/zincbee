@@ -271,7 +271,7 @@ const PositionsTable = () => {
 const NavBar = ({toggleOrderForm} : {toggleOrderForm : Function}) => {
   const menuItems = [
     {
-      label:'File',
+      label:'Zincbee',
       icon:'pi pi-fw pi-file',
     }
   ]

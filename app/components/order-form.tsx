@@ -1,10 +1,11 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useForm, Controller } from "react-hook-form"
 import 'primeflex/primeflex.css';
 import 'primeicons/primeicons.css';
 import 'primereact/resources/themes/lara-light-indigo/theme.css';
 import 'primereact/resources/primereact.css'
 import { Sidebar } from 'primereact/sidebar'
+import { Toast } from 'primereact/toast'
 import { InputText } from 'primereact/inputtext'
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog'
 import { InputNumber } from 'primereact/inputnumber'
@@ -23,7 +24,7 @@ export default function OrderForm({ visible, setVisible }: { visible: boolean, s
   const [hardStop, setHardStop] = useState(true)
   const [hardTarget, setHardTarget] = useState(true)
 
-  const [showMessage, setShowMessage] = useState(false) // TODO a toast
+  const orderPlacedToast = useRef<any>(null)
 
   const defaultValues = {
     sym: '',
@@ -45,7 +46,6 @@ export default function OrderForm({ visible, setVisible }: { visible: boolean, s
   } = useForm({ defaultValues })
 
   const onSubmit = async (data: any) => {
-    console.log(data)
     try {
       confirmDialog({
         position: 'left',
@@ -71,11 +71,14 @@ export default function OrderForm({ visible, setVisible }: { visible: boolean, s
           })
 
           if (!response.ok) {
+            orderPlacedToast.current.show({severity:'error', summary: 'Order Entry Failed', life: 3000, detail: `Error: ${response.statusText}`})
             throw new Error(`Error: ${response.status}`)
           }
           const result = await response.json()
 
-          setShowMessage(true)
+          const detail = `${result.qty} ${result.sym} ${result.market ? 'market' : `@${currencyFormat(result.limit_price)}`} ${result.position_type}`
+          orderPlacedToast.current.show({severity:'success', summary: 'Order Entered', life: 3000, detail})
+
           reset()
           return result
         }
@@ -109,9 +112,9 @@ export default function OrderForm({ visible, setVisible }: { visible: boolean, s
   return (
     <>
     <ConfirmDialog />
+    <Toast ref={orderPlacedToast} position="top-left" />
     <Sidebar visible={visible} onHide={() => setVisible(false)} style={{width: '22rem'}}>
       <h1 className="bordered-small-header mb-3">Place new order</h1>
-      { showMessage && <div className="p-field">TODO: dialog w details</div> }
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="block mb-3 mt-3">
           { symbol ? <QuickQuote symbol={symbol} /> : <p className="text-sm">Enter a symbol and quantity for the order</p> }
@@ -165,7 +168,7 @@ export default function OrderForm({ visible, setVisible }: { visible: boolean, s
             <label htmlFor="limit" className="mr-3">{ market ? 'Market Order' : 'Buy Limit' }</label>
           </div>
           <div className="flex flex-none">
-             <Controller name="limit" control={control} rules={{ required: market ? false : 'Limit price is required for non-market orders', validate: isPositiveNumber }} render={({ field, fieldState }) => (
+             <Controller name="limit" control={control} rules={{ validate: (val) => market || isPositiveNumber(val) }} render={({ field, fieldState }) => (
                <InputNumber
                  mode="currency"
                  currency="USD"
