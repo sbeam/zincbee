@@ -16,7 +16,7 @@ import { classNames } from 'primereact/utils'
 import QuickQuote from "./quick-quote"
 import currencyFormat from '~/utils/currency-format'
 
-export default function OrderForm() {
+export default function OrderForm({ visible, setVisible }: { visible: boolean, setVisible: Function }) {
   const [symbol, setSymbol] = useState('')
 
   const [market, setMarket] = useState(false)
@@ -104,14 +104,12 @@ export default function OrderForm() {
     { name: 'Short', code: 'short' },
   ]
 
-  const [visibleLeft, setVisibleLeft] = useState(true)
-
   const isPositiveNumber = (value: number) => value > 0
 
   return (
     <>
     <ConfirmDialog />
-    <Sidebar visible={visibleLeft} onHide={() => setVisibleLeft(false)} style={{width: '22rem'}}>
+    <Sidebar visible={visible} onHide={() => setVisible(false)} style={{width: '22rem'}}>
       <h1 className="bordered-small-header mb-3">Place new order</h1>
       { showMessage && <div className="p-field">TODO: dialog w details</div> }
       <form onSubmit={handleSubmit(onSubmit)}>

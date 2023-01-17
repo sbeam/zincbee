@@ -1,9 +1,11 @@
 import { Outlet } from '@remix-run/react'
 import { useEffect, useState } from "react"
+import { useQuery, QueryClient, QueryClientProvider, QueryObserver } from 'react-query'
+
 import { classNames } from 'primereact/utils'
 import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
-import { useQuery, QueryClient, QueryClientProvider, QueryObserver } from 'react-query'
+import { Menubar } from 'primereact/menubar';
 
 import theme from "primereact/resources/themes/lara-dark-indigo/theme.css"  //theme
 import pr from "primereact/resources/primereact.min.css"                  //core css
@@ -266,12 +268,35 @@ const PositionsTable = () => {
   )
 }
 
+const NavBar = ({toggleOrderForm} : {toggleOrderForm : Function}) => {
+  const menuItems = [
+    {
+      label:'File',
+      icon:'pi pi-fw pi-file',
+    }
+  ]
+
+  const orderFormSlider = <i onClick={(_e) => toggleOrderForm()} className="pi pi-angle-double-right" style={{'fontSize': '2em'}} />
+
+  return (
+    <Menubar model={menuItems} start={orderFormSlider} />
+  )
+}
+
+
 export default function Index() {
+  const [showOrderForm, setShowOrderForm] = useState(false)
+
+  const toggleOrderForm = () => {
+    setShowOrderForm(!showOrderForm)
+  }
+
   return (
     <>
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}>
       <QueryClientProvider client={queryClient}>
-        <OrderForm />
+        <NavBar toggleOrderForm={toggleOrderForm} />
+        <OrderForm visible={showOrderForm} setVisible={setShowOrderForm} />
         <PositionsTable />
       </QueryClientProvider>
     </div>
