@@ -70,11 +70,16 @@ export default function OrderForm({ visible, setVisible }: { visible: boolean, s
             body: JSON.stringify(data)
           })
 
+          const result = await response.json()
           if (!response.ok) {
-            orderPlacedToast.current.show({severity:'error', summary: 'Order Entry Failed', life: 3000, detail: `Error: ${response.statusText}`})
+            orderPlacedToast.current.show({
+              severity:'error',
+              summary: 'Order Entry Failed',
+              life: 3000,
+              detail: <div><div><strong>Error</strong>: {response.statusText}</div><div>{result.error}</div></div>
+            })
             throw new Error(`Error: ${response.status}`)
           }
-          const result = await response.json()
 
           const detail = `${result.qty} ${result.sym} ${result.market ? 'market' : `@${currencyFormat(result.limit_price)}`} ${result.position_type}`
           orderPlacedToast.current.show({severity:'success', summary: 'Order Entered', life: 3000, detail})
@@ -103,8 +108,8 @@ export default function OrderForm({ visible, setVisible }: { visible: boolean, s
   ]
 
   const sideOptions = [
-    { name: 'Long', code: 'long' },
-    { name: 'Short', code: 'short' },
+    { name: 'Long', code: 'Long' },
+    { name: 'Short', code: 'Short' },
   ]
 
   const isPositiveNumber = (value: number) => value > 0
