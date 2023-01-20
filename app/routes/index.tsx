@@ -47,6 +47,7 @@ interface SalientRowProps {
   disposed_fill_price?: number,
   time_in_force?: string,
   target_price?: number,
+  position_type?: string,
 }
 
 const useLastTradeQuery = ({ sym }: SalientRowProps) => {
@@ -161,12 +162,14 @@ const MaxLossCell = ({ stop_price, limit_price, qty, cost_basis, status } : Sali
   }
 }
 
-const PriceCell = ({ qty, sym, filled_avg_price, limit_price } : SalientRowProps) => {
-  if (filled_avg_price) {
-    return <div>{qty} {sym}@{currencyFormat(filled_avg_price)}</div>
-  }
-  else if (limit_price) {
-    return <div><em>{qty} {sym}@{currencyFormat(limit_price)}</em></div>
+const PriceCell = ({ qty, sym, filled_avg_price, limit_price, position_type } : SalientRowProps) => {
+  const color = position_type == 'Short' ? 'red' : 'inherit'
+  const pos = position_type == 'Short' ? (qty || 0) * -1 : qty
+
+  let price = currencyFormat(filled_avg_price || limit_price) || 'market'
+
+  if (price) {
+    return <div><span style={{color}}>{pos}</span> <strong>{sym}</strong>@{price}</div>
   }
   else {
     return <></>
