@@ -226,7 +226,9 @@ const PositionsTable = () => {
     }
     return response.json()
   }, {
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchInterval: 3600000,
+    cacheTime: 3600000,
   })
   if (isLoading) return <p>...</p>
   if (isError && error instanceof Error) return <p>{error.message}</p>
@@ -288,14 +290,26 @@ const NavBar = ({toggleOrderForm} : {toggleOrderForm : Function}) => {
 }
 
 const BucketView = () => {
-  const buckets = ["Spring", "Summer", "Fall", "Winter"]
   const [activeIndex, setActiveIndex] = useState(0)
+  const { isLoading, isError, error, data: buckets } = useQuery('buckets', async () => {
+    const response = await fetch('http://localhost:3001/buckets')
+    if (!response.ok) {
+      throw new Error('Network error')
+    }
+    return response.json()
+  }, {
+    refetchOnWindowFocus: false,
+    refetchInterval: Infinity,
+    cacheTime: Infinity,
+  })
+  if (isLoading) return <p>...</p>
+  if (isError && error instanceof Error) return <p>{error.message}</p>
 
   return (
     <TabView activeIndex={activeIndex} onTabChange={(e) => setActiveIndex(e.index)} scrollable className="bucketTabs">
-      {buckets.map((bucket) => {
+      {buckets.map((bucket: { rowid: string, name: string }) => {
         return (
-          <TabPanel header={bucket} key="bucket" leftIcon="pi pi-fw pi-home">
+          <TabPanel header={bucket.name} key="bucket" leftIcon="pi pi-fw pi-home">
             <PositionsTable bucket={buckets[activeIndex]} />
           </TabPanel>
         )
