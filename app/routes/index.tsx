@@ -204,7 +204,7 @@ const StopHeader = ({ toggle, relative } : {relative: boolean, toggle: Function}
   </div>
 }
 
-const PositionsTable = () => {
+const PositionsTable = ({bucket}: { bucket: string }) => {
   const [selectedRow, setSelectedRow] = useState(null)
   const [relativeStop, setRelativeStop] = useState(false)
   const [expandedRows, setExpandedRows] = useState({})
@@ -289,9 +289,10 @@ const NavBar = ({toggleOrderForm} : {toggleOrderForm : Function}) => {
   )
 }
 
-const BucketView = () => {
-  const [activeIndex, setActiveIndex] = useState(0)
-  const { isLoading, isError, error, data: buckets } = useQuery('buckets', async () => {
+const BucketedLots = ({showOrderForm, setShowOrderForm} : {showOrderForm: boolean, setShowOrderForm: Function}) => {
+  const [bucketIndex, setBucketIndex] = useState(0)
+
+  const { isLoading, isError, error, refetch, data: buckets } = useQuery('buckets', async () => {
     const response = await fetch('http://localhost:3001/buckets')
     if (!response.ok) {
       throw new Error('Network error')
@@ -306,15 +307,20 @@ const BucketView = () => {
   if (isError && error instanceof Error) return <p>{error.message}</p>
 
   return (
-    <TabView activeIndex={activeIndex} onTabChange={(e) => setActiveIndex(e.index)} scrollable className="bucketTabs">
+    <div className="bucketedLots">
+
+    <OrderForm visible={showOrderForm} setVisible={setShowOrderForm} bucket={buckets[bucketIndex]} />
+
+    <TabView activeIndex={bucketIndex} onTabChange={(e) => setBucketIndex(e.index)} scrollable className="bucketTabs">
       {buckets.map((bucket: { rowid: string, name: string }) => {
         return (
-          <TabPanel header={bucket.name} key="bucket" leftIcon="pi pi-fw pi-home">
-            <PositionsTable bucket={buckets[activeIndex]} />
+          <TabPanel header={bucket.name} key={bucket.name} leftIcon="pi pi-fw pi-home">
+            <PositionsTable bucket={bucket.rowid} />
           </TabPanel>
         )
       })}
     </TabView>
+    </div>
   )
 }
 
@@ -331,8 +337,7 @@ export default function Index() {
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}>
       <QueryClientProvider client={queryClient}>
         <NavBar toggleOrderForm={toggleOrderForm} />
-        <OrderForm visible={showOrderForm} setVisible={setShowOrderForm} />
-        <BucketView />
+        <BucketedLots showOrderForm={showOrderForm} setShowOrderForm={setShowOrderForm} />
       </QueryClientProvider>
     </div>
     <Outlet />
