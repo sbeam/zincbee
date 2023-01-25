@@ -6,6 +6,7 @@ import { classNames } from 'primereact/utils'
 import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
 import { Menubar } from 'primereact/menubar';
+import { TabView, TabPanel } from 'primereact/tabview'
 
 import theme from "primereact/resources/themes/lara-dark-indigo/theme.css"  //theme
 import pr from "primereact/resources/primereact.min.css"                  //core css
@@ -286,6 +287,23 @@ const NavBar = ({toggleOrderForm} : {toggleOrderForm : Function}) => {
   )
 }
 
+const BucketView = () => {
+  const buckets = ["Spring", "Summer", "Fall", "Winter"]
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  return (
+    <TabView activeIndex={activeIndex} onTabChange={(e) => setActiveIndex(e.index)} scrollable className="bucketTabs">
+      {buckets.map((bucket) => {
+        return (
+          <TabPanel header={bucket} key="bucket" leftIcon="pi pi-fw pi-home">
+            <PositionsTable bucket={buckets[activeIndex]} />
+          </TabPanel>
+        )
+      })}
+    </TabView>
+  )
+}
+
 
 export default function Index() {
   const [showOrderForm, setShowOrderForm] = useState(false)
@@ -300,7 +318,7 @@ export default function Index() {
       <QueryClientProvider client={queryClient}>
         <NavBar toggleOrderForm={toggleOrderForm} />
         <OrderForm visible={showOrderForm} setVisible={setShowOrderForm} />
-        <PositionsTable />
+        <BucketView />
       </QueryClientProvider>
     </div>
     <Outlet />
