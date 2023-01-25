@@ -289,7 +289,7 @@ const NavBar = ({toggleOrderForm} : {toggleOrderForm : Function}) => {
   )
 }
 
-const BucketedLots = ({showOrderForm, setShowOrderForm} : {showOrderForm: boolean, setShowOrderForm: Function}) => {
+const BucketView = ({ onChange }: { onChange : Function} ) => {
   const [bucketIndex, setBucketIndex] = useState(0)
 
   const { isLoading, isError, error, refetch, data: buckets } = useQuery('buckets', async () => {
@@ -302,31 +302,35 @@ const BucketedLots = ({showOrderForm, setShowOrderForm} : {showOrderForm: boolea
     refetchOnWindowFocus: false,
     refetchInterval: Infinity,
     cacheTime: Infinity,
+    onSuccess: (data) => {
+      onChange(data[bucketIndex].rowid)
+    }
   })
   if (isLoading) return <p>...</p>
   if (isError && error instanceof Error) return <p>{error.message}</p>
 
+  const chooseBucket = (i: number) => {
+    setBucketIndex(i)
+    onChange(buckets[i].rowid)
+  }
+
   return (
-    <div className="bucketedLots">
-
-    <OrderForm visible={showOrderForm} setVisible={setShowOrderForm} bucket={buckets[bucketIndex]} />
-
-    <TabView activeIndex={bucketIndex} onTabChange={(e) => setBucketIndex(e.index)} scrollable className="bucketTabs">
+    <TabView activeIndex={bucketIndex} onTabChange={(e) => chooseBucket(e.index)} scrollable className="bucketTabs">
       {buckets.map((bucket: { rowid: string, name: string }) => {
         return (
-          <TabPanel header={bucket.name} key={bucket.name} leftIcon="pi pi-fw pi-home">
+          <TabPanel header={bucket.name} key={bucket.rowid} leftIcon="pi pi-fw pi-home">
             <PositionsTable bucket={bucket.rowid} />
           </TabPanel>
         )
       })}
     </TabView>
-    </div>
   )
 }
 
 
 export default function Index() {
   const [showOrderForm, setShowOrderForm] = useState(false)
+  const [bucketId, setBucketId] = useState(null)
 
   const toggleOrderForm = () => {
     setShowOrderForm(!showOrderForm)
@@ -337,7 +341,8 @@ export default function Index() {
     <div style={{ fontFamily: "system-ui, sans-serif", lineHeight: "1.4" }}>
       <QueryClientProvider client={queryClient}>
         <NavBar toggleOrderForm={toggleOrderForm} />
-        <BucketedLots showOrderForm={showOrderForm} setShowOrderForm={setShowOrderForm} />
+        <OrderForm visible={showOrderForm} setVisible={setShowOrderForm} bucketId={bucketId} />
+        <BucketView onChange={setBucketId}  />
       </QueryClientProvider>
     </div>
     <Outlet />

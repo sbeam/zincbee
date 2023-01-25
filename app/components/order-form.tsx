@@ -17,7 +17,7 @@ import { classNames } from 'primereact/utils'
 import QuickQuote from "./quick-quote"
 import currencyFormat from '~/utils/currency-format'
 
-export default function OrderForm({ visible, setVisible, bucket }: { visible: boolean, setVisible: Function, bucket: string | null }) {
+export default function OrderForm({ visible, setVisible, bucketId }: { visible: boolean, setVisible: Function, bucketId: string | null }) {
   const [symbol, setSymbol] = useState('')
 
   const [market, setMarket] = useState(false)
@@ -25,7 +25,7 @@ export default function OrderForm({ visible, setVisible, bucket }: { visible: bo
   const [hardTarget, setHardTarget] = useState(true)
 
   const orderPlacedToast = useRef<any>(null)
-  console.log(bucket)
+  console.log(bucketId)
 
   const defaultValues = {
     sym: '',
