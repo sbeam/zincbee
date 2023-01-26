@@ -1,12 +1,15 @@
 import { Outlet } from '@remix-run/react'
-import { useEffect, useState } from "react"
-import { useQuery, QueryClient, QueryClientProvider, QueryObserver } from 'react-query'
+import { useEffect, useState, useRef } from "react"
+import { useQuery, useMutation, QueryClient, QueryClientProvider, QueryObserver } from 'react-query'
 
 import { classNames } from 'primereact/utils'
 import { DataTable } from 'primereact/datatable'
 import { Column } from 'primereact/column'
 import { Menubar } from 'primereact/menubar';
 import { TabView, TabPanel } from 'primereact/tabview'
+import { OverlayPanel } from 'primereact/overlaypanel'
+import { InputText } from 'primereact/inputtext'
+import { Toast } from 'primereact/toast'
 
 import theme from "primereact/resources/themes/lara-dark-indigo/theme.css"  //theme
 import pr from "primereact/resources/primereact.min.css"                  //core css
@@ -291,6 +294,10 @@ const NavBar = ({toggleOrderForm} : {toggleOrderForm : Function}) => {
 
 const BucketView = ({ onChange }: { onChange : Function} ) => {
   const [bucketIndex, setBucketIndex] = useState(0)
+  const [newBucketName, setNewBucketName] = useState("")
+  const op = useRef<OverlayPanel>(null)
+  const errorToast = useRef<Toast>(null)
+  const inputRef = useRef<any>(null)
 
   const { isLoading, isError, error, refetch, data: buckets } = useQuery('buckets', async () => {
     const response = await fetch('http://localhost:3001/buckets')
@@ -306,6 +313,25 @@ const BucketView = ({ onChange }: { onChange : Function} ) => {
       onChange(data[bucketIndex].rowid)
     }
   })
+
+  const { mutate: postBucket } = useMutation({
+    mutationFn: async (newBucketName: string) => {
+      const response = await fetch(`http://localhost:3001/bucket`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({name: newBucketName})
+      })
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText} - ${result.error}`)
+      }
+      return result
+    },
+    onSuccess: () => { op.current?.hide(); refetch() },
+  })
+
   if (isLoading) return <p>...</p>
   if (isError && error instanceof Error) return <p>{error.message}</p>
 
@@ -314,7 +340,23 @@ const BucketView = ({ onChange }: { onChange : Function} ) => {
     onChange(buckets[i].rowid)
   }
 
+  const addBucketButton = (_options: any) => {
+    return  (
+      <div className="flex align-items-center px-3 pi pi-plus" style={{ cursor: 'pointer' }} onClick={(e) => op.current?.toggle(e)} />
+    )
+  }
+
+  const saveBucket = (e: any) => {
+    if (e.key === 'Enter') {
+      postBucket(newBucketName, { onError: (e: any) => {
+        errorToast.current?.show({severity: 'error', summary: 'Error', detail: e.message, life: 3000})
+      }})
+    }
+  }
+
   return (
+    <>
+    <Toast ref={errorToast} position="top-right" />
     <TabView activeIndex={bucketIndex} onTabChange={(e) => chooseBucket(e.index)} scrollable className="bucketTabs">
       {buckets.map((bucket: { rowid: string, name: string }) => {
         return (
@@ -323,7 +365,12 @@ const BucketView = ({ onChange }: { onChange : Function} ) => {
           </TabPanel>
         )
       })}
+      <TabPanel headerTemplate={addBucketButton} headerClassName="flex align-items-center" />
     </TabView>
+    <OverlayPanel ref={op} dismissable style={{width: '300px'}} onShow={() => inputRef.current?.focus({preventScroll: true})} >
+      <InputText type="text" className="p-inputtext-sm block mb-2" ref={inputRef} onKeyUp={saveBucket} onChange={(e) => setNewBucketName(e.target.value)} />
+    </OverlayPanel>
+    </>
   )
 }
 
