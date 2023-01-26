@@ -33,3 +33,16 @@
 .bucketTabs.p-tabview .p-tabview-nav li a.p-tabview-nav-link {
   padding: 0.5rem 0.75rem;
 }
+
+.bucketMenu {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  height: 1.4rem;
+}
+.bucketMenu button.p-button.p-button-icon-only.p-button-rounded {
+  padding: 3px;
+  height: 1.4rem;
+  width: 1.4rem;
+  margin-top: -11px;
+}

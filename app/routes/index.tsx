@@ -10,6 +10,8 @@ import { TabView, TabPanel } from 'primereact/tabview'
 import { OverlayPanel } from 'primereact/overlaypanel'
 import { InputText } from 'primereact/inputtext'
 import { Toast } from 'primereact/toast'
+import { Menu } from 'primereact/menu'
+import { Button } from 'primereact/button'
 
 import theme from "primereact/resources/themes/lara-dark-indigo/theme.css"  //theme
 import pr from "primereact/resources/primereact.min.css"                  //core css
@@ -21,8 +23,9 @@ import chroma from 'chroma-js'
 
 import OrderForm from '~/components/order-form'
 import { FormattedDate } from '~/components/date'
-import currencyFormat from '~/utils/currency-format'
 import { ExpandedLotRow } from '~/components/expanded-lot-row'
+
+import currencyFormat from '~/utils/currency-format'
 
 const queryClient = new QueryClient()
 
@@ -286,11 +289,29 @@ const NavBar = ({toggleOrderForm} : {toggleOrderForm : Function}) => {
   ]
 
   const orderFormSlider = <i onClick={(_e) => toggleOrderForm()} className="pi pi-angle-double-right" style={{'fontSize': '2em'}} />
-
   return (
     <Menubar model={menuItems} start={orderFormSlider} />
   )
 }
+
+const BucketMenu = ({deletable}: {deletable: boolean}) => {
+  const menu = useRef<Menu>(null)
+
+  const items = [
+    { label: 'Rename', icon: 'pi pi-fw pi-pencil', command: (_e) => { console.log('mm', _e)} },
+  ]
+  if (deletable) {
+    items.push({ label: 'Delete', icon: 'pi pi-fw pi-trash', command: (_e) => { console.log('mm', _e)} })
+  }
+
+  return (
+    <div className="bucketMenu">
+      <Menu popup model={items} ref={menu} />
+      <Button label="" icon="pi pi-cog" className="p-button-text p-button-rounded p-button-sm" onClick={(e: any) => menu.current?.toggle(e)} />
+    </div>
+  )
+}
+
 
 const BucketView = ({ onChange }: { onChange : Function} ) => {
   const [bucketIndex, setBucketIndex] = useState(0)
@@ -358,9 +379,10 @@ const BucketView = ({ onChange }: { onChange : Function} ) => {
     <>
     <Toast ref={errorToast} position="top-right" />
     <TabView activeIndex={bucketIndex} onTabChange={(e) => chooseBucket(e.index)} scrollable className="bucketTabs">
-      {buckets.map((bucket: { rowid: string, name: string }) => {
+      {buckets.map((bucket: { rowid: string, name: string, lot_count: number }) => {
         return (
           <TabPanel header={bucket.name} key={bucket.rowid} leftIcon="pi pi-fw pi-home">
+            <BucketMenu deletable={bucket.lot_count == 0} />
             <PositionsTable bucket={bucket.rowid} />
           </TabPanel>
         )
