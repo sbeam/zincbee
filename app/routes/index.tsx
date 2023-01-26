@@ -219,7 +219,7 @@ const PositionsTable = ({bucket}: { bucket: string }) => {
   }
 
   const { isLoading, isError, data, error } = useQuery('positions', async () => {
-    const response = await fetch(`http://localhost:3001/orders?start`)
+    const response = await fetch(`http://localhost:3001/orders?bucket_id=${bucket}`)
     if (!response.ok) {
       console.log('Network error', response.status)
       throw new Error('Network error')

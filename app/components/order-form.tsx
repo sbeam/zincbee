@@ -63,6 +63,8 @@ export default function OrderForm({ visible, setVisible, bucketId }: { visible: 
           <div>Risk/Reward: {((data.target - data.limit) / (data.limit - data.stop)).toFixed(1)}</div>
         </div>,
         accept: async () => {
+          data.bucket_id = bucketId
+
           const response = await fetch('http://localhost:3001/order', {
             method: 'POST',
             headers: {
