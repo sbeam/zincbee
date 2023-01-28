@@ -86,7 +86,7 @@ const useBucketMutation = (method: MutationMethod, onSuccess: Function) => (
 const BucketTabsView = ({ onChange }: { onChange : Function} ) => {
   const [bucketIndex, setBucketIndex] = useState(0)
   const [renaming, setRenaming] = useState(false)
-  const op = useRef<OverlayPanel>(null)
+  const overlayRef = useRef<OverlayPanel>(null)
   const errorToast = useRef<Toast>(null)
   const inputRef = useRef<any>(null)
 
@@ -105,18 +105,22 @@ const BucketTabsView = ({ onChange }: { onChange : Function} ) => {
     }
   })
 
-  const { mutate: createBucket } = useBucketMutation(MutationMethod.Create, () => { op.current?.hide(); refetch() })
-  const { mutate: modifyBucket } = useBucketMutation(MutationMethod.Update, refetch)
+  const { mutate: createBucket } = useBucketMutation(MutationMethod.Create, () => { overlayRef.current?.hide(); refetch() })
+  const { mutate: modifyBucket } = useBucketMutation(MutationMethod.Update, () => { setRenaming(false); refetch() })
 
   const header = (bucket: BucketProps, options: any, active: boolean, renaming: boolean) => {
     if (active && renaming) {
-      return (<InputText type="text" defaultValue={bucket.name}
-                 onKeyUp={
-                   (e) => {
-                     e.key === 'Enter' && modifyBucket({oldBucketName: bucket.name, bucketName: (e.target as HTMLInputElement).value}, { onError: handleSaveError})
-                   }
-                 }
-                 style={{width: `${bucket.name.length}em`}} className="p-inputtext-sm block" />)
+      return (<div className="p-tabview-nav-link" style={{padding: '0.75em'}}>
+                <InputText type="text" defaultValue={bucket.name} autoFocus={true}
+                  onKeyUp={
+                    (e: React.KeyboardEvent) => {
+                      e.key === 'Enter' && modifyBucket({oldBucketName: bucket.name, bucketName: (e.target as HTMLInputElement).value}, { onError: handleSaveError})
+                    }
+                  }
+                  onBlur={() => setRenaming(false)}
+                  style={{width: `${bucket.name.length}em`}}
+                  className="p-inputtext-sm block" />
+              </div>)
     } else {
       return (<div className={options.className} onClick={options.onClick}>{bucket.name}</div>)
     }
@@ -133,7 +137,7 @@ const BucketTabsView = ({ onChange }: { onChange : Function} ) => {
 
   const addBucketButton = (_options: any) => {
     return  (
-      <div className="flex align-items-center px-3 pi pi-plus" style={{ cursor: 'pointer' }} onClick={(e) => op.current?.toggle(e)} />
+      <div className="flex align-items-center px-3 pi pi-plus" style={{ cursor: 'pointer' }} onClick={(e) => overlayRef.current?.toggle(e)} />
     )
   }
 
@@ -155,10 +159,10 @@ const BucketTabsView = ({ onChange }: { onChange : Function} ) => {
       })}
       <TabPanel headerTemplate={addBucketButton} headerClassName="flex align-items-center" />
     </TabView>
-    <OverlayPanel ref={op} dismissable style={{width: '300px'}} onShow={() => inputRef.current?.focus({preventScroll: true})} >
+    <OverlayPanel ref={overlayRef} dismissable style={{width: '300px'}} onShow={() => inputRef.current?.focus({preventScroll: true})} >
       <InputText type="text" className="p-inputtext-sm block mb-2" ref={inputRef}
                  onKeyUp={
-                   (e) => e.key === 'Enter' && createBucket({ bucketName: (e.target as HTMLInputElement).value }, { onError: handleSaveError})
+                   (e: React.KeyboardEvent) => e.key === 'Enter' && createBucket({ bucketName: (e.target as HTMLInputElement).value }, { onError: handleSaveError})
                  } />
     </OverlayPanel>
     </>
