@@ -17,36 +17,27 @@ interface BucketProps {
   lot_count: number,
 }
 
-const BucketMenu = ({bucket, refetch}: {bucket: BucketProps, refetch: Function}) => {
+enum MutationMethod {
+    Create = "POST",
+    Update = "PATCH",
+    Delete = "DELETE",
+}
+
+const BucketMenu = ({bucket, refetch, rename}: {bucket: BucketProps, refetch: Function, rename: Function}) => {
   const errorToast = useRef<Toast>(null)
   const menu = useRef<Menu>(null)
+  const popRef = useRef<HTMLDivElement>(null)
 
-  const { mutate: deleteBucket } = useMutation({
-    mutationFn: async (bucketName: string) => {
-      const response = await fetch("http://localhost:3001/bucket", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({name : bucketName }),
-      })
-      const result = await response.json()
-      if (!response.ok) {
-        throw new Error(`Error: ${response.statusText} - ${result.error}`)
-      }
-      return result
-    },
-    onSuccess: () => refetch(),
-  })
+  const { mutate: deleteBucket } = useBucketMutation(MutationMethod.Delete, refetch)
 
-  const confirmDeleteBucket = (event: any) => {
+  const confirmDeleteBucket = () => {
     confirmPopup({
       message: "Are you sure you want to delete this bucket?",
-      target: event.currentTarget,
+      target: popRef.current || undefined,
       icon: 'pi pi-info-circle',
       acceptClassName: 'p-button-danger',
       accept: async () => {
-        const result = deleteBucket(bucket.name, { onError: (e: any) => {
+        const result = deleteBucket({ bucketName: bucket.name }, { onError: (e: any) => {
           errorToast.current?.show({severity: 'error', summary: 'Error', detail: e.message, life: 3000})
         }})
         return result
@@ -55,14 +46,14 @@ const BucketMenu = ({bucket, refetch}: {bucket: BucketProps, refetch: Function})
   }
 
   const items = [
-    { label: 'Rename', icon: 'pi pi-fw pi-pencil', command: (_e: any) => { console.log('mm', _e)} },
+    { label: 'Rename', icon: 'pi pi-fw pi-pencil', command: () => rename(true) },
   ]
   if (bucket.lot_count === 0) {
     items.push({ label: 'Delete', icon: 'pi pi-fw pi-trash', command: confirmDeleteBucket })
   }
 
   return (
-    <div className="bucketMenu">
+    <div ref={popRef} className="bucketMenu">
       <Toast ref={errorToast} position="top-right" />
       <ConfirmPopup />
       <Menu popup model={items} ref={menu} />
@@ -71,15 +62,16 @@ const BucketMenu = ({bucket, refetch}: {bucket: BucketProps, refetch: Function})
   )
 }
 
-const usePostBucket = (op: React.RefObject<OverlayPanel>, refetch: Function) => (
+const useBucketMutation = (method: MutationMethod, onSuccess: Function) => (
   useMutation({
-    mutationFn: async (newBucketName: string) => {
-      const response = await fetch(`http://localhost:3001/bucket`, {
-        method: 'POST',
+    mutationFn: async ({bucketName, oldBucketName}: { bucketName: string, oldBucketName?: string }) => {
+      const url = method === MutationMethod.Update ? `http://localhost:3001/bucket/${oldBucketName}` : 'http://localhost:3001/bucket'
+      const response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({name: newBucketName})
+        body: JSON.stringify({name: bucketName}),
+        method
       })
       const result = await response.json()
       if (!response.ok) {
@@ -87,14 +79,13 @@ const usePostBucket = (op: React.RefObject<OverlayPanel>, refetch: Function) => 
       }
       return result
     },
-    onSuccess: () => { op.current?.hide(); refetch() },
+    onSuccess: () => onSuccess()
   })
 )
 
-
 const BucketTabsView = ({ onChange }: { onChange : Function} ) => {
   const [bucketIndex, setBucketIndex] = useState(0)
-  const [newBucketName, setNewBucketName] = useState("")
+  const [renaming, setRenaming] = useState(false)
   const op = useRef<OverlayPanel>(null)
   const errorToast = useRef<Toast>(null)
   const inputRef = useRef<any>(null)
@@ -114,7 +105,23 @@ const BucketTabsView = ({ onChange }: { onChange : Function} ) => {
     }
   })
 
-  const { mutate: postBucket } = usePostBucket(op, refetch)
+  const { mutate: createBucket } = useBucketMutation(MutationMethod.Create, () => { op.current?.hide(); refetch() })
+  const { mutate: modifyBucket } = useBucketMutation(MutationMethod.Update, refetch)
+
+  const header = (bucket: BucketProps, options: any, active: boolean, renaming: boolean) => {
+    if (active && renaming) {
+      return (<InputText type="text" defaultValue={bucket.name}
+                 onKeyUp={
+                   (e) => {
+                     e.key === 'Enter' && modifyBucket({oldBucketName: bucket.name, bucketName: (e.target as HTMLInputElement).value}, { onError: handleSaveError})
+                   }
+                 }
+                 style={{width: `${bucket.name.length}em`}} className="p-inputtext-sm block" />)
+    } else {
+      return (<div className={options.className} onClick={options.onClick}>{bucket.name}</div>)
+    }
+  }
+
 
   if (isLoading) return <p>...</p>
   if (isError && error instanceof Error) return <p>{error.message}</p>
@@ -130,22 +137,18 @@ const BucketTabsView = ({ onChange }: { onChange : Function} ) => {
     )
   }
 
-  const saveBucket = (e: any) => {
-    if (e.key === 'Enter') {
-      postBucket(newBucketName, { onError: (e: any) => {
-        errorToast.current?.show({severity: 'error', summary: 'Error', detail: e.message, life: 3000})
-      }})
-    }
+  const handleSaveError = (err: any) => {
+    errorToast.current?.show({severity: 'error', summary: 'Error', detail: err.message, life: 3000})
   }
 
   return (
     <>
     <Toast ref={errorToast} position="top-right" />
     <TabView activeIndex={bucketIndex} onTabChange={(e) => chooseBucket(e.index)} scrollable className="bucketTabs">
-      {buckets.map((bucket: { rowid: string, name: string, lot_count: number }) => {
+      {buckets.map((bucket: { rowid: string, name: string, lot_count: number }, i: number) => {
         return (
-          <TabPanel header={bucket.name} key={bucket.rowid} leftIcon="pi pi-fw pi-home">
-            <BucketMenu bucket={bucket} refetch={refetch} />
+          <TabPanel headerTemplate={(options) => header(bucket, options, (i === bucketIndex), renaming)} key={bucket.rowid} leftIcon="pi pi-fw pi-home">
+            <BucketMenu bucket={bucket} refetch={refetch} rename={setRenaming} />
             <LotsTable bucket={bucket.rowid} />
           </TabPanel>
         )
@@ -153,7 +156,10 @@ const BucketTabsView = ({ onChange }: { onChange : Function} ) => {
       <TabPanel headerTemplate={addBucketButton} headerClassName="flex align-items-center" />
     </TabView>
     <OverlayPanel ref={op} dismissable style={{width: '300px'}} onShow={() => inputRef.current?.focus({preventScroll: true})} >
-      <InputText type="text" className="p-inputtext-sm block mb-2" ref={inputRef} onKeyUp={saveBucket} onChange={(e) => setNewBucketName(e.target.value)} />
+      <InputText type="text" className="p-inputtext-sm block mb-2" ref={inputRef}
+                 onKeyUp={
+                   (e) => e.key === 'Enter' && createBucket({ bucketName: (e.target as HTMLInputElement).value }, { onError: handleSaveError})
+                 } />
     </OverlayPanel>
     </>
   )
