@@ -14,9 +14,10 @@ import { ExpandedLotRow } from '~/components/expanded-lot-row'
 import currencyFormat from '~/utils/currency-format'
 
 import chroma from 'chroma-js'
+
 const stopScale = chroma.scale(['#ffcc00', '#ffffff']).domain([0, 20])
 
-const LotsTable = ({bucket}: { bucket: string }) => {
+const LotsTable = ({bucket, refresher}: { bucket: string, refresher: number }) => {
   const [selectedRow, setSelectedRow] = useState(null)
   const [relativeStop, setRelativeStop] = useState(false)
   const [expandedRows, setExpandedRows] = useState({})
@@ -30,7 +31,7 @@ const LotsTable = ({bucket}: { bucket: string }) => {
     }
   }
 
-  const { isLoading, isError, data, error } = useQuery('positions', async () => {
+  const { isLoading, isError, data, error, refetch } = useQuery('positions', async () => {
     const response = await fetch(`http://localhost:3001/orders?bucket_id=${bucket}`)
     if (!response.ok) {
       console.log('Network error', response.status)
@@ -42,6 +43,12 @@ const LotsTable = ({bucket}: { bucket: string }) => {
     refetchInterval: 3600000,
     cacheTime: 3600000,
   })
+
+
+  useEffect(() => {
+    if (refresher > 0) refetch()
+  }, [refresher, refetch]);
+
   if (isLoading) return <p>...</p>
   if (isError && error instanceof Error) return <p>{error.message}</p>
 
@@ -196,8 +203,8 @@ const useLastTradeQuery = ({ sym }: SalientRowProps) => {
       return response.json()
     },
     {
-      refetchInterval: 1000 * 60 * 15, // 15 minutes
-      refetchIntervalInBackground: true
+      refetchInterval: 1000 * 60,
+      refetchOnWindowFocus: false,
     }
   )
 }
@@ -214,7 +221,7 @@ const LastTrade = ({ sym }: SalientRowProps) => {
   )
 }
 
-const GainLossDisposed = ({ sym, qty, cost_basis, disposed_fill_price }: SalientRowProps) => {
+const GainLossDisposed = ({ qty, cost_basis, disposed_fill_price }: SalientRowProps) => {
   if (!qty || !cost_basis || !disposed_fill_price) return <p>...</p>
 
   const gL = (qty * disposed_fill_price) - (cost_basis * 1.0)

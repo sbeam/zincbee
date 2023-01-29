@@ -23,7 +23,7 @@ enum MutationMethod {
     Delete = "DELETE",
 }
 
-const BucketMenu = ({bucket, refetch, rename}: {bucket: BucketProps, refetch: Function, rename: Function}) => {
+const BucketMenu = ({bucket, refetch, rename, refreshLots}: {bucket: BucketProps, refetch: Function, rename: Function, refreshLots: Function}) => {
   const errorToast = useRef<Toast>(null)
   const menu = useRef<Menu>(null)
   const popRef = useRef<HTMLDivElement>(null)
@@ -46,10 +46,11 @@ const BucketMenu = ({bucket, refetch, rename}: {bucket: BucketProps, refetch: Fu
   }
 
   const items = [
-    { label: 'Rename', icon: 'pi pi-fw pi-pencil', command: () => rename(true) },
+    { label: 'Refresh', icon: 'pi pi-fw pi-refresh', command: refreshLots },
+    { label: 'Rename bucket', icon: 'pi pi-fw pi-pencil', command: () => rename(true) },
   ]
   if (bucket.lot_count === 0) {
-    items.push({ label: 'Delete', icon: 'pi pi-fw pi-trash', command: confirmDeleteBucket })
+    items.push({ label: 'Delete bucket', icon: 'pi pi-fw pi-trash', command: confirmDeleteBucket })
   }
 
   return (
@@ -86,6 +87,7 @@ const useBucketMutation = (method: MutationMethod, onSuccess: Function) => (
 const BucketTabsView = ({ onChange }: { onChange : Function} ) => {
   const [bucketIndex, setBucketIndex] = useState(0)
   const [renaming, setRenaming] = useState(false)
+  const [refresher, setRefresher] = useState(0)
   const overlayRef = useRef<OverlayPanel>(null)
   const errorToast = useRef<Toast>(null)
   const inputRef = useRef<any>(null)
@@ -152,8 +154,8 @@ const BucketTabsView = ({ onChange }: { onChange : Function} ) => {
       {buckets.map((bucket: { rowid: string, name: string, lot_count: number }, i: number) => {
         return (
           <TabPanel headerTemplate={(options) => header(bucket, options, (i === bucketIndex), renaming)} key={bucket.rowid} leftIcon="pi pi-fw pi-home">
-            <BucketMenu bucket={bucket} refetch={refetch} rename={setRenaming} />
-            <LotsTable bucket={bucket.rowid} />
+            <BucketMenu bucket={bucket} refetch={refetch} rename={setRenaming} refreshLots={() => setRefresher(refresher + 1)} />
+            <LotsTable bucket={bucket.rowid} refresher={refresher} />
           </TabPanel>
         )
       })}
